@@ -1,0 +1,24 @@
+{{- $cardType := .Params.card -}}
+{{- $cardTypePlural := $cardType | lower | pluralize -}}
+{{- $cardPartial := print $cardType "-card.json" -}}
+
+{{- $allCards := where .Site.RegularPages "Section" $cardTypePlural -}}
+{{- $allCards = where $allCards "Draft" false -}}
+
+{{- $randomNumber := or .Site.Params.randomCardCount 30 -}}
+{{- $randomCards := shuffle $allCards | first $randomNumber -}}
+{
+  "meta": {
+    "title": "Random {{ $cardTypePlural }}",
+    "description": "A random selection of {{ $randomNumber }} {{ $cardTypePlural }} from our collection",
+    "count": {{ $randomNumber }},
+    "total": {{ len (where .Site.RegularPages "Section" $cardTypePlural) }},
+    "generated_at": "{{ now.Format "2006-01-02T15:04:05Z07:00" }}"
+  },
+  "{{- $cardTypePlural -}}": [
+{{- range $i, $story := $randomCards -}}
+    {{- if $i }},{{ end }}
+    {{ partial $cardPartial $story }}
+{{- end }}
+  ]
+}

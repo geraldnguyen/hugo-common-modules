@@ -1,0 +1,28 @@
+{{ define "main" }}
+
+{{ $cardType := print .Params.card }}
+{{ $cardTypePlural := $cardType | lower | pluralize }}
+{{ $cardPartial := print $cardType "-card" ".html" }}
+
+{{ $randomNumber := or .Site.Params.randomCardCount 30 }}
+
+<div class="random-{{- $cardTypePlural -}}-page">
+    <div class="container">
+        <header class="page-header">
+            <h1>{{ .Title }}</h1>
+            <p>{{ .Content }}</p>
+        </header>
+
+        <!-- Random Grid -->
+        <div class="{{- $cardTypePlural -}}-grid" id="random-{{- $cardTypePlural -}}-grid">
+            {{- $allCards := where .Site.RegularPages "Section" $cardTypePlural -}}
+            {{- $allCards = where $allCards "Draft" false -}}
+            {{- $randomCards := shuffle $allCards | first $randomNumber -}}
+            {{ range $randomCards }}
+                {{ partial $cardPartial . }}
+            {{ end }}
+        </div>
+    </div>
+</div>
+
+{{ end }}
