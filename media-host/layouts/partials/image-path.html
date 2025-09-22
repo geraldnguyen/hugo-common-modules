@@ -1,0 +1,5 @@
+    {{- $imgHost := (site.Params.image_host | default (replaceRE `/$` "" site.BaseURL)) -}}
+
+    {{- $result := . | replaceRE "^https?://[^/]+" $imgHost -}}
+
+    {{ return $result }}
