@@ -1,0 +1,54 @@
+{{/*
+  taxonomy-list.html
+
+  Params (dict):
+    - Taxonomy: string, taxonomy name (e.g., "origins", "themes", "genres", "age_groups")
+    - Top: optional int, number of items to show (if omitted or 0 => show all)
+    - Order: optional string, "ByCount" to sort by Count desc, otherwise sorts by Page.Title
+
+  Renders a section containing a list of taxonomy cards and a "View All" link.
+*/}}
+{{ $tax := .Taxonomy }}
+{{ $top := default 0 .Top }}
+{{ $order := default "" .Order }}
+
+{{ $raw := index site.Taxonomies $tax }}
+{{ if not $raw }}
+  {{/* If taxonomy not found, render nothing */}}
+  {{ return }}
+{{ end }}
+
+{{/* Normalize into a slice so `sort` always receives a sequence. */}}
+{{ $terms := slice }}
+{{ range $k, $v := $raw }}
+  {{ $terms = $terms | append $v }}
+{{ end }}
+
+<!-- {{ $terms := $raw }} -->
+
+
+{{ $sorted := $terms }}
+{{ if eq $order "ByCount" }}
+  {{ $sorted = sort $terms "Count" "desc" }}
+{{ else }}
+  {{ $sorted = sort $terms "Page.Title" }}
+{{ end }}
+
+{{ $selected := $sorted }}
+{{ if and (gt $top 0) (gt (len $sorted) $top) }}
+  {{ $selected = first $top $sorted }}
+{{ end }}
+
+{{/* Build a user-friendly heading from taxonomy name */}}
+{{ $heading := title (replace $tax "_" " ") }}
+<section class="top-{{ $tax }}-section" style="margin:2.5rem 0 1.5rem 0;">
+  <h4 style="margin-bottom:1rem;">Top {{ $heading }}</h4>
+  <div class="top-{{ $tax }}-list" style="display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap;">
+    {{ range $term := $selected }}
+      {{ partial "taxonomy-card.html" (dict "Term" $term "Taxonomy" $tax) }}
+    {{ end }}
+    {{ if gt $top 0 }}
+      <a href="/{{ $tax }}/" class="btn btn-secondary" style="margin-left:1.5em;white-space:nowrap;font-size:1rem;">View All {{ $heading }}</a>
+    {{ end }}
+  </div>
+</section>

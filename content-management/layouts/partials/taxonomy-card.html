@@ -1,0 +1,27 @@
+{{/*
+  taxonomy-card.html
+
+  Params (passed as a dict):
+    - Term: the taxonomy term object (e.g., $origin, $theme, $genre, $age)
+    - Taxonomy: the taxonomy name string (e.g., "origins", "themes", "genres", "age_groups")
+
+  This partial renders the anchor used across the homepage for taxonomy links and
+  handles the slightly different icon path for `age_groups` vs other taxonomies.
+*/}}
+{{ $term := .Term }}
+{{ $taxonomy := .Taxonomy }}
+<a href="{{ $term.Page.RelPermalink }}" class="{{ printf "%s-link" $taxonomy }}" style="display:flex;align-items:center;gap:0.5em;text-decoration:none;color:inherit;font-size:1.08rem;">
+  <span class="{{ printf "%s-icon" $taxonomy }}" style="display:inline-block;width:1.3em;height:1.3em;vertical-align:middle;">
+    {{ if eq $taxonomy "age_groups" }}
+      {{/* age_groups use a flattened svg name based on title */}}
+      {{ $iconName := lower (replace (replace (replace (replace $term.Page.Title " " "-") "_" "-") "/" "-") "'" "") }}
+      {{ $iconPath := printf "/%s/%s.svg" $taxonomy $iconName }}
+      <img src="{{ $iconPath }}" alt="{{ $term.Page.Title }} icon" style="width:1.3em;height:1.3em;display:block;" loading="lazy" />
+    {{ else }}
+      {{ $dir := path.Base ($term.Page.File.Dir) }}
+      {{ $iconPath := printf "/%s/%s/%s.svg" $taxonomy $dir $dir }}
+      <img src="{{ $iconPath }}" alt="{{ $term.Page.Title }} icon" style="width:1.3em;height:1.3em;display:block;" loading="lazy" />
+    {{ end }}
+  </span>
+  <span>{{ $term.Page.Title }}</span>
+</a>
