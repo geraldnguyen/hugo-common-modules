@@ -1,0 +1,52 @@
+{{/*
+  carousel.html
+
+  Params (dict):
+    - Title: string (heading text)
+    - Card: string (singular card name, e.g. "story")
+    - Items: sequence of page objects to render
+
+  This partial pluralizes Card (basic rule) and replaces occurrences of
+  "stories" in classnames/headings with the pluralized card name.
+*/}}
+{{ $title := .Title | default "Items" }}
+{{ $card := .Card | default "story" }}
+{{ $items := .Items }}
+{{ if not $items }}{{ return }}{{ end }}
+
+{{/* basic pluralization: if word ends with consonant+y -> replace y->ies, else add 's' */}}
+{{ $last := substr $card (sub (len $card) 1) }}
+{{ $vowels := "aeiou" }}
+{{ $cardPlural := cond (and (eq $last "y") (not (in $vowels (lower $last)))) (printf "%sies" (substr $card 0 (sub (len $card) 1))) (printf "%ss" $card) }}
+
+{{/* wrapper class and ids */}}
+{{ $wrapperClass := printf "featured-%s" $cardPlural }}
+{{ $trackId := printf "carousel-track-%s" $cardPlural }}
+
+<div class="{{ $wrapperClass }}">
+  <h3>{{ $title }}</h3>
+  <div class="{{ $cardPlural }}-carousel">
+    <div class="carousel-container">
+      <div class="carousel-track" id="{{ $trackId }}">
+        {{ range $index, $item := $items }}
+          {{- $cssClass := "featured carousel-slide" -}}
+          {{- if eq $index 0 -}}
+            {{- $cssClass = printf "%s active" $cssClass -}}
+          {{- end -}}
+          {{ partial (printf "%s-card.html" $card) (dict "Page" $item "cssClass" $cssClass) }}
+        {{ end }}
+      </div>
+      {{ if gt (len $items) 1 }}
+        <button class="carousel-btn carousel-prev" aria-label="Previous {{ $cardPlural }}">‹</button>
+        <button class="carousel-btn carousel-next" aria-label="Next {{ $cardPlural }}">›</button>
+      {{ end }}
+    </div>
+    {{ if gt (len $items) 1 }}
+      <div class="carousel-indicators">
+        {{ range $index, $item := $items }}
+          <button class="indicator {{ if eq $index 0 }}active{{ end }}" data-slide="{{ $index }}" aria-label="Go to {{ $card }} {{ add $index 1 }}"></button>
+        {{ end }}
+      </div>
+    {{ end }}
+  </div>
+</div>
