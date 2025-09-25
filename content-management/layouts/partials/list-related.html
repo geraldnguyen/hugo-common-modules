@@ -1,0 +1,41 @@
+{{/*
+  list-related.html
+
+  Renders a list of related items for a page. The number of related items
+  is controlled by site parameter `related_count` (under `params`) and
+  defaults to 3 when not set.
+
+  Usage:
+    {{ partial "list-related.html" . }}
+*/}}
+{{ $page := . }}
+{{ $card := "story" }}
+{{/* accept either dict input or page as dot */}}
+{{ if reflect.IsMap . }}
+  {{ with index . "page" }}{{ $page = . }}{{ end }}
+  {{ with index . "Page" }}{{ $page = . }}{{ end }}
+  {{ with index . "card" }}{{ $card = . }}{{ end }}
+  {{ with index . "Card" }}{{ $card = . }}{{ end }}
+{{ end }}
+
+{{ $count := int (default 3 .Site.Params.related_count) }}
+{{ $related := first $count (.Site.RegularPages.Related $page) }}
+
+{{/* pluralize card: simple rule y->ies else add s */}}
+{{ $last := substr $card (sub (len $card) 1) }}
+{{ $vowels := "aeiou" }}
+{{ $cardPlural := cond (and (eq $last "y") (not (in $vowels (lower $last)))) (printf "%sies" (substr $card 0 (sub (len $card) 1))) (printf "%ss" $card) }}
+{{ $cardPluralTitle := title (replace $cardPlural "_" " ") }}
+
+{{ if gt (len $related) 0 }}
+<div class="similar-{{ $cardPlural }}">
+    <div class="container">
+        <h3>Similar {{ $cardPluralTitle }}</h3>
+        <div class="{{ $cardPlural }}-grid">
+            {{ range $related }}
+                {{ partial (printf "%s-card.html" $card) (dict "Page" .) }}
+            {{ end }}
+        </div>
+    </div>
+</div>
+{{ end }}
