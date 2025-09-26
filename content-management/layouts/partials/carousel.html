@@ -11,6 +11,7 @@
 */}}
 {{ $title := .Title | default "Items" }}
 {{ $card := .Card | default "story" }}
+{{ $cardCssClass := .CardCssClass | default "" }}
 {{ $items := .Items }}
 {{ if not $items }}{{ return }}{{ end }}
 
@@ -20,16 +21,152 @@
 {{ $cardPlural := cond (and (eq $last "y") (not (in $vowels (lower $last)))) (printf "%sies" (substr $card 0 (sub (len $card) 1))) (printf "%ss" $card) }}
 
 {{/* wrapper class and ids */}}
-{{ $wrapperClass := printf "featured-%s" $cardPlural }}
+{{ $wrapperClass := printf "%s-carousel-container" $cardPlural }}
 {{ $trackId := printf "carousel-track-%s" $cardPlural }}
 
+<script>
+  
+// Initialize carousel on all pages
+document.addEventListener('DOMContentLoaded', function() {
+    initFeaturedCarousel();
+});
+
+// Featured Stories Carousel
+function initFeaturedCarousel() {
+    console.log('Initializing carousel...'); // Debug log
+  const carousel = document.querySelector('.{{ $wrapperClass }}');
+    if (!carousel) {
+        console.log('No carousel found');
+        return;
+    }
+    
+  const track = carousel.querySelector('#{{ $trackId }}');
+  const slides = track ? track.querySelectorAll('.carousel-slide') : [];
+  const prevBtn = carousel.querySelector('.carousel-prev');
+  const nextBtn = carousel.querySelector('.carousel-next');
+  const indicators = carousel.querySelectorAll('.indicator');
+    
+    console.log('Carousel elements:', { track, slides: slides.length, prevBtn, nextBtn, indicators: indicators.length });
+    
+    let currentSlide = 0;
+    const totalSlides = slides.length;
+    
+    if (totalSlides <= 1) {
+        console.log('Not enough slides for carousel');
+        return;
+    }
+    
+    function updateCarousel() {
+        console.log('Updating carousel to slide:', currentSlide);
+        // Update slides
+        slides.forEach((slide, index) => {
+            slide.classList.toggle('active', index === currentSlide);
+        });
+        
+        // Update indicators
+        indicators.forEach((indicator, index) => {
+            indicator.classList.toggle('active', index === currentSlide);
+        });
+        
+        // Transform the track
+        const translateX = -currentSlide * 100;
+        track.style.transform = `translateX(${translateX}%)`;
+    }
+    
+    function nextSlide() {
+        console.log('Next slide clicked');
+        currentSlide = (currentSlide + 1) % totalSlides;
+        updateCarousel();
+    }
+    
+    function prevSlide() {
+        console.log('Previous slide clicked');
+        currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+        updateCarousel();
+    }
+    
+    function goToSlide(slideIndex) {
+        console.log('Going to slide:', slideIndex);
+        currentSlide = slideIndex;
+        updateCarousel();
+    }
+    
+    // Event listeners
+    if (nextBtn) {
+        nextBtn.addEventListener('click', nextSlide);
+        console.log('Next button listener added');
+    }
+    if (prevBtn) {
+        prevBtn.addEventListener('click', prevSlide);
+        console.log('Previous button listener added');
+    }
+    
+    indicators.forEach((indicator, index) => {
+        indicator.addEventListener('click', () => goToSlide(index));
+    });
+    
+    // Auto-play carousel (optional)
+    let autoPlayInterval;
+    function startAutoPlay() {
+        // Always clear existing interval before starting new one
+        stopAutoPlay();
+        autoPlayInterval = setInterval(nextSlide, 5000); // Change slide every 5 seconds
+    }
+    
+    function stopAutoPlay() {
+        if (autoPlayInterval) {
+            clearInterval(autoPlayInterval);
+            autoPlayInterval = null; // Clear the reference
+        }
+    }
+    
+    // Start auto-play
+    startAutoPlay();
+    
+    // Pause auto-play on hover
+    carousel.addEventListener('mouseenter', stopAutoPlay);
+    carousel.addEventListener('mouseleave', startAutoPlay);
+    
+    // Pause auto-play when user interacts
+    let resumeTimeout;
+    [prevBtn, nextBtn, ...indicators].forEach(element => {
+        if (element) {
+            element.addEventListener('click', () => {
+                stopAutoPlay();
+                // Clear any existing resume timeout
+                if (resumeTimeout) {
+                    clearTimeout(resumeTimeout);
+                }
+                // Resume after 10 seconds
+                resumeTimeout = setTimeout(startAutoPlay, 10000);
+            });
+        }
+    });
+    
+    // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (carousel.matches(':hover') || document.activeElement.closest('.{{ $wrapperClass }}')) {
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevSlide();
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                nextSlide();
+            }
+        }
+    });
+    
+    console.log('Carousel initialized successfully');
+}
+
+</script>
 <div class="{{ $wrapperClass }}">
   <h3>{{ $title }}</h3>
   <div class="{{ $cardPlural }}-carousel">
     <div class="carousel-container">
       <div class="carousel-track" id="{{ $trackId }}">
         {{ range $index, $item := $items }}
-          {{- $cssClass := "featured carousel-slide" -}}
+          {{- $cssClass := printf "%s carousel-slide" $cardCssClass -}}
           {{- if eq $index 0 -}}
             {{- $cssClass = printf "%s active" $cssClass -}}
           {{- end -}}
