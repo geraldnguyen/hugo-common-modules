@@ -1,0 +1,75 @@
+{{/*
+  Pagination partial
+  Usage: {{ partial "pagination.html" . }}
+  Expects the current context to have a .Paginator
+*/}}
+{{ if gt .Paginator.TotalPages 1 }}
+<div class="pagination">
+    <div class="pagination-nav">
+        {{ if .Paginator.HasPrev }}
+        <a href="{{ .Paginator.Prev.URL }}" class="pagination-btn pagination-prev">
+            <span>← Previous</span>
+        </a>
+        {{ else }}
+        <span class="pagination-btn pagination-prev disabled">
+            <span>← Previous</span>
+        </span>
+        {{ end }}
+        
+        <div class="pagination-numbers">
+            {{ $pag := .Paginator }}
+            {{ $adjacent := 2 }}
+            {{ $first := 1 }}
+            {{ $last := $pag.TotalPages }}
+            {{ $current := $pag.PageNumber }}
+            
+            <!-- First page -->
+            {{ if ne $current $first }}
+            <a href="{{ $pag.First.URL }}" class="pagination-number">1</a>
+            {{ if gt $current (add $first $adjacent 1) }}
+            <span class="pagination-ellipsis">…</span>
+            {{ end }}
+            {{ end }}
+            
+            <!-- Adjacent pages -->
+            {{ range $pag.Pagers }}
+                {{ $pageNum := .PageNumber }}
+                {{ $showPage := and (ge $pageNum (sub $current $adjacent)) (le $pageNum (add $current $adjacent)) }}
+                {{ if $showPage }}
+                {{ $isFirstAlreadyShown := and (eq $pageNum $first) (ne $current $first) }}
+                {{ $isLastWillBeShown := and (eq $pageNum $last) (ne $current $last) (lt $current (sub $last $adjacent 1)) }}
+                {{ if and (not $isFirstAlreadyShown) (not $isLastWillBeShown) }}
+                {{ if eq $pageNum $current }}
+                <span class="pagination-number current">{{ $pageNum }}</span>
+                {{ else }}
+                <a href="{{ .URL }}" class="pagination-number">{{ $pageNum }}</a>
+                {{ end }}
+                {{ end }}
+                {{ end }}
+            {{ end }}
+            
+            <!-- Last page -->
+            {{ if ne $current $last }}
+            {{ if lt $current (sub $last $adjacent 1) }}
+            <span class="pagination-ellipsis">…</span>
+            {{ end }}
+            <a href="{{ $pag.Last.URL }}" class="pagination-number">{{ $last }}</a>
+            {{ end }}
+        </div>
+        
+        {{ if .Paginator.HasNext }}
+        <a href="{{ .Paginator.Next.URL }}" class="pagination-btn pagination-next">
+            <span>Next →</span>
+        </a>
+        {{ else }}
+        <span class="pagination-btn pagination-next disabled">
+            <span>Next →</span>
+        </span>
+        {{ end }}
+    </div>
+    
+    <div class="pagination-info">
+        Showing {{ add (mul (sub .Paginator.PageNumber 1) .Paginator.PagerSize) 1 }}–{{ if .Paginator.HasNext }}{{ mul .Paginator.PageNumber .Paginator.PagerSize }}{{ else }}{{ .Paginator.TotalNumberOfElements }}{{ end }} of {{ .Paginator.TotalNumberOfElements }} stories
+    </div>
+</div>
+{{ end }}
