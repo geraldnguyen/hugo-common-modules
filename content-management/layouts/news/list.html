@@ -1,0 +1,91 @@
+{{ define "main" }}
+<style>
+/* News List Page Styles */
+.news-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 3.5rem 20px 2rem;
+}
+
+.pin-icon {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 0.5rem;
+    margin-bottom: 0.2rem;
+}
+.pin-icon svg {
+    width: 1.25em;
+    height: 1.25em;
+    stroke: #eab308;
+    fill: none;
+}
+.pin-icon.material-icons {
+    font-size: 1.25em;
+    color: #eab308;
+    vertical-align: middle;
+    margin-right: 0.5rem;
+    margin-bottom: 0.2rem;
+}
+
+.news-item.pinned h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.news-item {
+    margin-bottom: 2.5rem;
+}
+.news-item h3 {
+    margin-bottom: 0.5rem;
+}
+.news-description {
+    margin-top: 0.25rem;
+    margin-bottom: 1.25rem;
+}
+.read-more {
+    display: inline-block;
+    margin-bottom: 0.25rem;
+}
+</style>
+
+<div class="news-container">
+    <h1>{{ .Title }}</h1>
+    <p>{{ .Description }}</p>
+
+    <!-- Pinned Articles -->
+    <div class="pinned-articles">
+        {{ range (where .Pages "Params.pinned" "eq" true).ByDate.Reverse }}
+        <article class="news-item pinned">
+            <h3 style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="pin-icon material-icons" title="Pinned">push_pin</span>
+                <a href="{{ .Permalink }}">{{ .Title }}</a>
+            </h3>
+            <p class="news-date">{{ .Date.Format "January 2, 2006" }}</p>
+            <p class="news-description">{{ .Params.description }}</p>
+            <a href="{{ .Permalink }}" class="read-more">Read More</a>
+        </article>
+        {{ end }}
+    </div>
+
+    <!-- Decorative Separator -->
+    <div class="news-separator">
+        <svg height="24" width="100%" viewBox="0 0 800 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="0" y1="12" x2="800" y2="12" stroke="#e5e7eb" stroke-width="2"/>
+            <circle cx="400" cy="12" r="6" fill="#f5f5f5" stroke="#bbb" stroke-width="2"/>
+        </svg>
+    </div>
+
+    <!-- Regular Articles -->
+    <div class="regular-articles">
+        {{ range (where .Pages "Params.pinned" "ne" true).ByDate.Reverse }}
+        <article class="news-item">
+            <h3><a href="{{ .Permalink }}">{{ .Title }}</a></h3>
+            <p class="news-date">{{ .Date.Format "January 2, 2006" }}</p>
+            <p class="news-description">{{ .Params.description }}</p>
+            <a href="{{ .Permalink }}" class="read-more">Read More</a>
+        </article>
+        {{ end }}
+    </div>
+</div>
+{{ end }}

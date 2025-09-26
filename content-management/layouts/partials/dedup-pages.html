@@ -1,0 +1,24 @@
+{{/*
+  dedup-pages.html
+
+  Parameters (dict):
+    Pages -> slice of pages to deduplicate
+
+  Returns: a slice of pages with nil entries removed and duplicates (by Title) removed,
+           preserving the first occurrence order.
+  Usage: {{ $final := partial "dedup-pages.html" (dict "Pages" $allFeatured) }}
+*/}}
+{{ $ctx := . }}
+{{ $pages := cond (isset $ctx "Pages") $ctx.Pages (slice) }}
+
+{{ $final := slice }}
+{{ $seen := slice }}
+
+{{ range $pages }}
+  {{ if and . (not (in $seen .Title)) }}
+    {{ $final = $final | append . }}
+    {{ $seen = $seen | append .Title }}
+  {{ end }}
+{{ end }}
+
+{{ return $final }}

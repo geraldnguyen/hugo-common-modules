@@ -1,0 +1,64 @@
+{{ define "main" }}
+<style>
+/* Individual News Article Styles */
+.news-article {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 3.5rem 20px 2rem;
+}
+.news-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+.news-title {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+    padding-top: 1rem;
+}
+.news-date {
+    color: #888;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+.news-description {
+    font-size: 1.15rem;
+    margin-bottom: 1.5rem;
+    color: #555;
+}
+.news-content {
+    font-size: 1.15rem;
+    line-height: 1.7;
+    color: #333;
+}
+
+.news-separator {
+    width: 100%;
+    margin: 2.5rem 0 2.5rem 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.news-separator svg {
+    width: 100%;
+    max-width: 800px;
+    height: 24px;
+    display: block;
+}
+</style>
+
+<article class="news-article">
+    <header class="news-header">
+        <h1>{{ .Title }}</h1>
+        <p class="news-date">{{ .Date.Format "January 2, 2006" }}</p>
+        {{ if .Params.description }}
+        <p class="news-description">{{ .Params.description }}</p>
+        {{ end }}
+    </header>
+    <div class="news-content">
+        {{ .Content }}
+    </div>
+</article>
+{{ end }}
+
