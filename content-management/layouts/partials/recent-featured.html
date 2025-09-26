@@ -1,0 +1,22 @@
+{{/*
+  recent-featured.html
+
+  Compute recently featured pages (featured=true within 1 month)
+  and return the resulting slice to the caller.
+  Usage: {{ $featuredRecent := partial "recent-featured.html" . }}
+*/}}
+{{ $featured := where .Site.RegularPages "Params.featured" true }}
+{{ $featuredRecent := slice }}
+{{ $now := now }}
+{{ $oneMonthAgo := $now.AddDate 0 -1 0 }}
+
+<!-- Get recently featured pages (featured=true within 1 month) -->
+{{ range $featured }}
+  {{ $featuredDate := .Params.featured_date | default .Date }}
+  {{ if ge $featuredDate $oneMonthAgo }}
+    {{ $featuredRecent = $featuredRecent | append . }}
+  {{ end }}
+{{ end }}
+
+{{/* Return the slice so callers can capture it: {{ $featuredRecent := partial "recent-featured.html" . }} */}}
+{{ return $featuredRecent }}

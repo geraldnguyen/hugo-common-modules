@@ -1,0 +1,267 @@
+{{/*
+  content.html
+
+  Parameterized partial for rendering single content pages.
+  Expects a dict with:
+    .Page -> the Page (required)
+    .Meta -> slice of meta keys to render (e.g. (slice "reading_time" "genres"))
+
+  The partial derives content type from .Page.Section and uses singularize/pluralize
+  to produce appropriate labels.
+*/}}
+{{ $ctx := . }}
+{{ $page := $ctx.Page }}
+{{ $meta := cond (isset $ctx "Meta") $ctx.Meta (slice) }}
+{{/* optional suffixes map: key -> suffix string (e.g. "reading_time" -> "mins") */}}
+{{ $suffixes := cond (isset $ctx "Suffixes") $ctx.Suffixes (dict) }}
+
+{{/* derive content type */}}
+{{ $raw :=  $page.Section }}
+{{ $sing := $raw | singularize }}
+{{ $plural := $sing | pluralize }}
+{{ $ContentType := title $sing }}
+{{ $ContentTypePlural := title $plural }}
+
+<article class="{{ $sing }}">
+    <header class="{{ $sing }}-header">
+        <div class="container">
+            <h1 class="{{ $sing }}-title">{{ $page.Title }}</h1>
+            {{ with $page.Params.original_title }}
+            <p class="{{ $sing }}-original-title"><span class="original-label">Original</span>&nbsp;<span class="original-text">{{ . }}</span></p>
+            {{ end }}
+            <div class="{{ $sing }}-meta">
+                <div class="{{ $sing }}-meta-tags">
+                                        {{ range $i, $key := $meta }}
+                                                {{ $suf := cond (isset $suffixes $key) (index $suffixes $key) "" }}
+                                                {{ with index $page.Params $key }}
+                                                    {{ $t := printf "%T" . }}
+                                                    {{ if or (eq $t "int") (eq $t "float64") (eq $t "string") }}
+                                                        {{/* scalar value */}}
+                                                        {{ if ne $suf "" }}
+                                                            <span class="{{ $key }}-tag meta-tag">{{ printf "%v %s" . $suf }}</span>
+                                                        {{ else }}
+                                                            <span class="{{ $key }}-tag meta-tag">{{ . }}</span>
+                                                        {{ end }}
+                                                    {{ else }}
+                                                        {{ range . }}
+                                                            {{ if ne $suf "" }}
+                                                                <a class="{{ $key }}-tag meta-tag" href="/{{ $key | urlize }}/{{ . | urlize }}/">{{ printf "%s %s" . $suf }}</a>
+                                                            {{ else }}
+                                                                <a class="{{ $key }}-tag meta-tag" href="/{{ $key | urlize }}/{{ . | urlize }}/">{{ . }}</a>
+                                                            {{ end }}
+                                                        {{ end }}
+                                                    {{ end }}
+                                                {{ end }}
+                                        {{ end }}
+                </div>
+                {{ with $page.Params.tags }}
+                <div class="{{ $sing }}-tags">
+                    {{ range . }}
+                    <a class="tags-tag" href="/tags/{{ . | urlize }}/">{{ . }}</a>
+                    {{ end }}
+                </div>
+                {{ end }}
+            </div>
+
+            <!-- Social Sharing -->
+            {{ partial "social-sharing-single.html" $page }}
+        </div>
+    </header>
+
+            <div class="{{ $sing }}-content">
+        <div class="container">
+            <div class="{{ $sing }}-text">
+                {{ $page.Content }}
+            </div>
+
+            {{ with $page.Params.notes }}
+            <div class="{{ $sing }}-notes">
+                <h3>Notes</h3>
+                <p>{{ . }}</p>
+            </div>
+            {{ end }}
+        </div>
+    </div>
+
+    {{ with $page.Params.author }}
+    <div class="{{ $sing }}-attribution">
+        <div class="container">
+            <p><strong>{{ if $page.Params.source_type }}{{ $page.Params.source_type }}{{ else }}{{ $ContentType }}{{ end }} by:</strong> {{ . }}</p>
+            {{ with $page.Params.source }}
+            <p><strong>Source:</strong> {{ . }}</p>
+            {{ end }}
+            {{ with $page.Params.translation_note }}
+            <p><strong>Translation Note:</strong> {{ . }}</p>
+            {{ end }}
+        </div>
+    </div>
+    {{ end }}
+
+    <div class="{{ $sing }}-rating">
+        <div class="container">
+            <h3>Rate this {{ $ContentType }}:</h3>
+            <div class="rating-widget" id="rating-widget" data-{{ $sing }}="{{ $page.File.BaseFileName }}">
+                <span class="star" data-rating="1">☆</span>
+                <span class="star" data-rating="2">☆</span>
+                <span class="star" data-rating="3">☆</span>
+                <span class="star" data-rating="4">☆</span>
+                <span class="star" data-rating="5">☆</span>
+            </div>
+            <div class="rating-display" id="rating-display"></div>
+        </div>
+    </div>
+
+    <div class="comments-section">
+        <div class="container">
+            <h3>Comments</h3>
+            {{ partial "disqus.html" $page }}
+        </div>
+    </div>
+
+    <!-- Similar {{ $ContentTypePlural }} -->
+    {{ partial "list-related.html" $page }}
+
+    <style>
+.{{ $sing }}-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    align-items: baseline;
+}
+
+.{{ $sing }}-meta span {
+    background: #f3f4f6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* Original title styling */
+.{{ $sing }}-original-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 0.25rem 0 0.8rem 0;
+    color: #374151;
+    font-family: 'Libre Baskerville', serif;
+    font-size: 1rem;
+}
+.{{ $sing }}-original-title .original-label {
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+}
+.{{ $sing }}-original-title .original-text {
+    color: #111827;
+    font-style: italic;
+    font-size: 1.05rem;
+}
+
+.{{ $sing }}-meta {
+    margin-bottom: 1rem;
+}
+
+.{{ $sing }}-meta > div {
+    margin-bottom: 0.5rem;
+}
+
+.{{ $sing }}-meta span {
+    display: inline-block;
+    margin-right: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.meta-tag {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: inline-block;
+    margin-top: 0.5em;
+}
+
+/* {{ $ContentType }} Content */
+.{{ $sing }}-content {
+    margin-bottom: 2rem;
+}
+
+.{{ $sing }}-attribution {
+    background: #f9fafb;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 2rem;
+    font-size: 0.875rem;
+}
+
+.{{ $sing }}-text {
+.news-container h1 {
+    margin-top: 2.5rem;
+}
+    font-family: 'Libre Baskerville', serif;
+    font-size: 1.125rem;
+    line-height: 1.7;
+}
+
+.{{ $sing }}-text p {
+    margin-bottom: 1.5rem;
+}
+
+.{{ $sing }}-notes {
+    background: #f3f4f6;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-top: 2rem;
+}
+
+/* Rating Widget */
+.{{ $sing }}-rating {
+    background: #f9fafb;
+    padding: 1.5rem 0;
+    margin: 2rem 0;
+}
+
+.rating-widget {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.rating-widget .star {
+    font-size: 1.5rem;
+    color: #d1d5db;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.rating-widget .star:hover,
+.rating-widget .star.active {
+    color: #fbbf24;
+}
+
+.rating-display {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* Comments */
+.comments-section {
+    margin: 2rem 0;
+}
+
+/* Similar {{ $ContentTypePlural }} */
+.similar-{{ $sing }} {
+    background: #f9fafb;
+    padding: 2rem 0;
+    margin-top: 2rem;
+}
+
+  </style>
+</article>
+
+

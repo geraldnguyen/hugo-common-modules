@@ -1,0 +1,294 @@
+{{/*
+  social-sharing-single.html
+
+  Partial for social sharing UI used on single pages. Expects the current
+  page as `.` and derives a content type from `.Section` (falls back to "Story").
+
+  This partial includes minimal CSS required for the UI, the share buttons
+  markup and the JS used to toggle and copy links.
+*/}}
+{{ $page := . }}
+{{/* derive content type from .Section and singularize a trailing 's' when present */}}
+{{ $rawSection := cond (gt (len $page.Section) 0) $page.Section "story" }}
+{{ $singular := $rawSection | singularize }}
+{{ $contentType := title $singular }}
+
+<style>
+
+
+/* Social Sharing */
+.social-sharing {
+    margin-top: 1rem;
+}
+
+.social-sharing h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.share-buttons {
+    display: flex;
+    gap: 0.25rem; /* reduced empty space between buttons */
+    flex-wrap: wrap;
+}
+
+.share-btn {
+    padding: 0.4rem 0.6rem; /* tighter padding to reduce button footprint */
+    border-radius: 6px;
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    opacity: 0.9;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+/* Use same gray semi-opaque background as copy button for social buttons */
+.share-btn.whatsapp,
+.share-btn.facebook,
+.share-btn.x,
+.share-btn.linkedin {
+    background: rgba(107, 114, 128, 0.6);
+    color: white;
+}
+
+.share-btn:hover {
+    opacity: 0.9;
+    color: white;
+}
+
+/* Copy link button style */
+.share-btn.copy {
+    background: rgba(107, 114, 128, 0.6);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+    border-radius: 6px;
+    color: white;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    max-height: 40px;
+}
+
+/* X button uses same gray semi-opaque background as other social buttons */
+.share-btn.x {
+    background: rgba(107, 114, 128, 0.6);
+    color: white;
+}
+
+/* Larger Facebook icon inside the button */
+.share-btn.facebook .material-icons,
+.share-btn.facebook .social-icon {
+    font-size: 22px; /* slightly larger than default */
+    line-height: 1;
+}
+
+/* Increase X icon size and ensure it inherits color from the button */
+.share-btn.x svg {
+    width: 24px;
+    height: 24px;
+}
+.share-btn.x svg text {
+    font-size: 18px !important;
+    fill: currentColor !important;
+}
+
+/* Share toggle functionality */
+.share-container {
+    position: fixed;
+    right: 20px;
+    bottom: 33.33%;
+    transform: translateY(50%);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.primary-share-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.share-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+    background: rgba(107, 114, 128, 0.6);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    max-height: 40px;
+    opacity: 0.7;
+}
+
+.share-toggle:hover {
+    background: rgba(75, 85, 99, 0.8);
+    transform: translateY(-1px);
+}
+
+.share-toggle svg {
+    width: 18px;
+    height: 18px;
+}
+
+.share-buttons {
+    display: none;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    width: 100%;
+    animation: slideDown 0.3s ease-out;
+}
+
+.share-buttons.show {
+    display: flex;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<div class="social-sharing">
+    <div class="share-container">
+        <div class="primary-share-buttons">
+            <a href="#" class="share-btn copy" data-url="{{ $page.Permalink }}" title="Copy link" rel="noopener" aria-label="Copy link"> 
+                <span class="material-icons copy-icon">content_copy</span>
+            </a>
+            <button class="share-toggle" id="share-toggle" aria-label="Share this {{ lower $contentType }}">
+                <span class="material-icons share-icon">share</span>
+            </button>
+        </div>
+       
+        <div class="share-buttons" id="share-buttons">
+            <a href="https://api.whatsapp.com/send?text={{ (printf "%s %s" $page.Title $page.Permalink) | urlquery }}" 
+               target="_blank" class="share-btn whatsapp" rel="noopener noreferrer" title="Share on WhatsApp">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                </svg>
+            </a>
+            <a href="https://www.facebook.com/dialog/share?app_id=123456789&display=popup&href={{ $page.Permalink }}" 
+               target="_blank" class="share-btn facebook" rel="noopener" title="Share on Facebook">
+                <span class="material-icons social-icon">facebook</span>
+            </a>
+            <a href="https://twitter.com/intent/tweet?url={{ $page.Permalink }}&text={{ $page.Title }}" 
+               class="share-btn x" title="Share on X (formerly Twitter)"
+               rel="noopener noreferrer"
+               onclick="window.open(this.href, 'x-share', 'width=600,height=400'); return false;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                    <text x="6" y="18" font-size="16" font-family="Arial, Helvetica, sans-serif" font-weight="bold" fill="#110000">X</text>
+                </svg>
+            </a>
+            <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ $page.Permalink }}&title={{ $page.Title }}" 
+               target="_blank" class="share-btn linkedin" rel="noopener" title="Share on LinkedIn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+    <script>
+    (function(){
+        // Share toggle functionality
+        function initShareToggle() {
+            const toggleBtn = document.getElementById('share-toggle');
+            const shareButtons = document.getElementById('share-buttons');
+            
+            if (toggleBtn && shareButtons) {
+                toggleBtn.addEventListener('click', function() {
+                    shareButtons.classList.toggle('show');
+                    const isExpanded = shareButtons.classList.contains('show');
+                    toggleBtn.setAttribute('aria-expanded', isExpanded);
+                });
+                
+                // Close when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!toggleBtn.contains(event.target) && !shareButtons.contains(event.target)) {
+                        shareButtons.classList.remove('show');
+                        toggleBtn.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+        }
+        
+        function copyToClipboard(text){
+            if(navigator.clipboard && navigator.clipboard.writeText){
+                return navigator.clipboard.writeText(text);
+            }
+            return new Promise(function(resolve, reject){
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                try{ document.execCommand('copy'); resolve(); }catch(e){ reject(e); }
+                ta.remove();
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', function(){
+            initShareToggle();
+            
+            var els = document.querySelectorAll('.share-btn.copy');
+            els.forEach(function(el){
+                var copyTimeout;
+                var originalHTML = el.innerHTML;
+                
+                el.addEventListener('click', function(ev){
+                    ev.preventDefault();
+                    
+                    // Clear any existing timeout
+                    if (copyTimeout) {
+                        clearTimeout(copyTimeout);
+                    }
+                    
+                    var url = el.getAttribute('data-url') || window.location.href;
+                    copyToClipboard(url).then(function(){
+                        // Store current state and change to "Copied"
+                        el.innerText = 'Copied';
+                        
+                        // Set timeout to revert back
+                        copyTimeout = setTimeout(function(){
+                            el.innerHTML = originalHTML;
+                            copyTimeout = null;
+                        }, 2000);
+                    }).catch(function(){
+                        // Reset on error too
+                        if (copyTimeout) {
+                            clearTimeout(copyTimeout);
+                        }
+                        el.innerHTML = originalHTML;
+                        copyTimeout = null;
+                    });
+                });
+            });
+        });
+    })();
+    </script>
+</div>
