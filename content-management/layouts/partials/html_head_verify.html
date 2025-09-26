@@ -1,0 +1,10 @@
+{{/*
+  html_head_verify.html
+
+  Renders HTML head verification meta tags. Currently includes Pinterest domain verify.
+  Usage: {{ partial "html_head_verify.html" . }}
+*/}}
+{{ $token := cond (isset .Site.Params "pinterestVerify") .Site.Params.pinterestVerify "" }}
+{{ if ne $token "" }}
+<meta name="p:domain_verify" content="{{ $token }}"/>
+{{ end }}

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.LanguageCode }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Title }}</title>
+    <meta name="description" content="{{ if .Description }}{{ .Description }}{{ else }}{{ .Site.Params.description }}{{ end }}">
+
+    <!-- Open Graph / Facebook -->
+    {{ partial "opengraph.html" . }}
+
+    <!-- Google google_analytics -->
+    {{ partial "google_analytics.html" . }}
+
+    <!-- Google AdSense -->
+    {{ partial "google_adsense.html" . }}
+    
+    <!-- Fonts -->
+    {{ partial "google_font.html" . }}
+
+    <!-- Head verification tags (Pinterest, etc.) -->
+    {{ partial "html_head_verify.html" . }}
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ "css/style.css" | absURL }}">
+
+    {{ partial "html_head.html" . }}
+
+</head>
+<body>
+    
+    <header class="site-header">
+        <nav class="navbar">
+            <div class="nav-container">
+                {{ partial "nav-social.html" . }}
+
+                
+                <nav class="nav-menu">
+                    {{- range .Site.Menus.main -}}<div class="nav-item"><a href="{{ .URL }}" class="nav-link {{ if $.IsMenuCurrent "main" . }}active{{ end }}">{{ .Name }}</a></div>
+                    {{- end -}}
+                </nav>
+                <div class="nav-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        {{ block "main" . }}{{ end }}
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-container">
+            <p>&copy; {{ now.Year }} {{ .Site.Title }}. {{ .Site.Params.Description}}.</p>
+            <div class="footer-links">
+                {{- range .Site.Menus.footer -}}
+                    <a href="{{ .URL }}" class="footer-link {{ if $.IsMenuCurrent "footer" . }}active{{ end }}">{{ .Name }}</a>
+                {{- end -}}
+            </div>
+
+            <!-- Social icons (configured in site params -> social) -->
+            <div class="footer-social">
+                {{ partial "nav-social.html" . }}
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="{{ "js/main.js" | absURL }}"></script>
+</body>
+</html>

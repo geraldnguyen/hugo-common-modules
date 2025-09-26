@@ -1,0 +1,11 @@
+{{/*
+  google_adsense.html
+
+  Render Google AdSense script/meta when .Site.Params.googleAdSense is set.
+  Usage: {{ partial "google_adsense.html" . }}
+*/}}
+{{ if .Site.Params.googleAdSense }}
+  <meta name="google-adsense-account" content="{{ .Site.Params.googleAdSense }}">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ .Site.Params.googleAdSense }}"
+    crossorigin="anonymous"></script>
+{{ end }}
