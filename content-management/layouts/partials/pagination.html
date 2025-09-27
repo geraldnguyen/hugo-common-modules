@@ -50,10 +50,11 @@
             
             <!-- Last page -->
             {{ if ne $current $last }}
-            {{ if lt $current (sub $last $adjacent 1) }}
-            <span class="pagination-ellipsis">…</span>
-            {{ end }}
-            <a href="{{ $pag.Last.URL }}" class="pagination-number">{{ $last }}</a>
+                {{/* Only show the last-page link if it's outside the adjacent window */}}
+                {{ if gt $last (add $current $adjacent) }}
+                    <span class="pagination-ellipsis">…</span>
+                    <a href="{{ $pag.Last.URL }}" class="pagination-number">{{ $last }}</a>
+                {{ end }}
             {{ end }}
         </div>
         
