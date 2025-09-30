@@ -1,22 +1,73 @@
 {{ define "main" }}
-<main class="taxonomy-list" style="max-width: 700px; margin: 2rem auto; padding: 2rem; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #0001;">
-  <h1 style="font-size:2.2rem; margin-bottom:1.5rem;">{{ .Title }}</h1>
+<style>
+/* Scoped styles for taxonomy listing template */
+.taxonomy-card {
+  max-width: 700px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #0001;
+}
+.taxonomy-title {
+  font-size: 2.2rem;
+  margin-bottom: 1.5rem;
+}
+.taxonomy-pagination-info {
+  margin-bottom: 1.5rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+.taxonomy-list {
+  list-style: none;
+  padding: 0;
+}
+.taxonomy-item {
+  margin-bottom: 1.2em;
+  padding: 1em;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px #0001;
+}
+.taxonomy-link {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #2a5d9f;
+  text-decoration: none;
+}
+.taxonomy-meta {
+  color: #888;
+  font-size: 0.95em;
+  margin-left: 0.7em;
+}
+.taxonomy-summary {
+  margin-top: 0.3em;
+  color: #666;
+  font-size: 0.98em;
+}
+.taxonomy-item .taxonomy-link:hover {
+  text-decoration: underline;
+}
+</style>
+
+<main class="taxonomy-list taxonomy-card">
+  <h1 class="taxonomy-title">{{ .Title }}</h1>
 
   {{ .Content }}
   
   <!-- Pagination info -->
   {{ if gt .Paginator.TotalPages 1 }}
-  <div style="margin-bottom: 1.5rem; color: #666; font-size: 0.9rem;">
+  <div class="taxonomy-pagination-info">
     Showing {{ .Site.Params.pagination.pagerSize | default 12 }} per page of {{ len .Pages }} (Page {{ .Paginator.PageNumber }} of {{ .Paginator.TotalPages }})
   </div>
   {{ end }}
 
-  <ul style="list-style:none; padding:0;">
+  <ul class="taxonomy-list">
     {{ range .Paginator.Pages }}
-      <li style="margin-bottom:1.2em; padding:1em; background:#f9f9f9; border-radius:8px; box-shadow:0 1px 3px #0001;">
-        <a href="{{ .RelPermalink }}" style="font-size:1.15rem; font-weight:600; color:#2a5d9f; text-decoration:none;">{{ .Title }}</a>
-        <span style="color:#888; font-size:0.95em; margin-left:0.7em;">{{ .Date.Format "Jan 2, 2006" }}</span>
-        <div class="summary" style="margin-top:0.3em; color:#666; font-size:0.98em;">{{ .Summary }}</div>
+      <li class="taxonomy-item">
+        <a href="{{ .RelPermalink }}" class="taxonomy-link">{{ .Title }}</a>
+        <span class="taxonomy-meta">{{ .Date.Format "Jan 2, 2006" }}</span>
+        <div class="summary taxonomy-summary">{{ .Summary }}</div>
       </li>
     {{ end }}
   </ul>
