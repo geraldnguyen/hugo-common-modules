@@ -47,9 +47,18 @@
     <header class="site-header">
         <nav class="navbar">
             <div class="nav-container">
-                {{ partial "nav-social.html" . }}
+                <div class="nav-brand">
+                    {{ partial "nav-social.html" . }}
+                    
+                    <a href="{{ .Site.BaseURL }}" class="nav-brand">
+                        <div class="logo">
+                            <img src="{{ "logo.svg" | relURL }}" alt="TellJoke Logo" width="32" height="32">
+                        </div>
 
-                
+                        <h1>{{ .Site.Title }}</h1>
+                    </a>
+                </div>
+
                 <nav class="nav-menu">
                     {{- range .Site.Menus.main -}}<div class="nav-item"><a href="{{ .URL }}" class="nav-link {{ if $.IsMenuCurrent "main" . }}active{{ end }}">{{ .Name }}</a></div>
                     {{- end -}}
