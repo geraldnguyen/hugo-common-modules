@@ -6,6 +6,20 @@
     <title>{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Title }}</title>
     <meta name="description" content="{{ if .Description }}{{ .Description }}{{ else }}{{ .Site.Params.description }}{{ end }}">
 
+    <!-- Site favicon: uses the SVG logo in static/ -->
+    <link rel="icon" href="{{ "logo.svg" | relURL }}" type="image/svg+xml">
+    <!-- Optional PNG fallback for older browsers: place a 32x32 png at static/favicon-32.png and uncomment the line below -->
+    <!-- <link rel="icon" href="{{ "favicon-32.png" | relURL }}" sizes="32x32" type="image/png"> -->
+    <!-- Apple touch icon (iOS) - recommended 180x180 PNG at static/apple-touch-icon.png -->
+    <!-- Place a PNG at static/apple-touch-icon.png and uncomment the line below to enable -->
+    <!-- <link rel="apple-touch-icon" sizes="180x180" href="{{ "apple-touch-icon.png" | relURL }}"> -->
+    <!-- Windows tile (mstile) - recommended 150x150 PNG at static/mstile-150x150.png -->
+    <!-- Add these meta tags and place files at the given paths to enable Windows tile support -->
+    <!--
+    <meta name="msapplication-TileColor" content="#ffd54a">
+    <meta name="msapplication-TileImage" content="{{ "mstile-150x150.png" | relURL }}">
+    -->
+
     <!-- Open Graph / Facebook -->
     {{ partial "opengraph.html" . }}
 
