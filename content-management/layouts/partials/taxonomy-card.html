@@ -18,9 +18,12 @@
       {{ $iconPath := printf "/%s/%s.svg" $taxonomy $iconName }}
       <img src="{{ $iconPath }}" alt="{{ $term.Page.Title }} icon" style="width:1.3em;height:1.3em;display:block;" loading="lazy" />
     {{ else }}
-      {{ $dir := path.Base ($term.Page.File.Dir) }}
-      {{ $iconPath := printf "/%s/%s/%s.svg" $taxonomy $dir $dir }}
-      <img src="{{ $iconPath }}" alt="{{ $term.Page.Title }} icon" style="width:1.3em;height:1.3em;display:block;" loading="lazy" />
+      {{/* other taxonomies use a nested svg name based on the content dir */}}
+      {{ with $term.Page.File }}
+        {{ $dir := path.Base (.Dir) }}
+        {{ $iconPath := printf "/%s/%s/%s.svg" $taxonomy $dir $dir }}
+        <img src="{{ $iconPath }}" alt="{{ $term.Page.Title }} icon" style="width:1.3em;height:1.3em;display:block;" loading="lazy" />
+      {{ end }}
     {{ end }}
   </span>
   <span>{{ $term.Page.Title }}</span>
