@@ -39,6 +39,46 @@
     <link rel="stylesheet" href="{{ "css/base.css" | absURL }}">
     <link rel="stylesheet" href="{{ "css/style.css" | absURL }}">
 
+    <style>
+    /* Dropdown submenu: hidden by default, shown on hover */
+    .nav-menu { position: relative; }
+    .nav-item { position: relative; display: inline-block; }
+    .nav-item.has-children > .nav-submenu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: #fff;
+        min-width: 12rem;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+        border-radius: 6px;
+        padding: 0.4rem 0.2rem;
+        z-index: 1000;
+    }
+    /* Show submenu on hover (desktop-only: larger screens & hover-capable devices) */
+    @media (hover: hover) and (min-width: 769px) {
+        .nav-item.has-children:hover > .nav-submenu {
+            display: block;
+        }
+    }
+    .nav-submenu .nav-sublink {
+        display: block;
+        padding: 0.45rem 1rem;
+        color: inherit;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .nav-submenu .nav-sublink:hover {
+        background: #f6f9ff;
+    }
+    /* Keep base layout unchanged on small screens - mobile can use the existing toggle */
+    @media (max-width: 768px) {
+        .nav-item { display: block; }
+        .nav-item.has-children > .nav-submenu { position: static; display: none; }
+        .nav-item.has-children.open > .nav-submenu { display: block; }
+    }
+    </style>
+
     {{ partial "html_head.html" . }}
 
 
@@ -57,8 +97,22 @@
                 </div>
 
                 <nav class="nav-menu">
-                    {{- range .Site.Menus.main -}}<div class="nav-item"><a href="{{ .URL }}" class="nav-link {{ if $.IsMenuCurrent "main" . }}active{{ end }}">{{ .Name }}</a></div>
-                    {{- end -}}
+                    {{- range .Site.Menus.main }}
+                        <div class="nav-item{{ if gt (len .Children) 0 }} has-children{{ end }}">
+                            <a href="{{ .URL }}" class="nav-link {{ if $.IsMenuCurrent "main" . }}active{{ end }}">{{ .Name }}</a>
+                            {{- if gt (len .Children) 0 }}
+                                <div class="nav-submenu">
+                                    {{- range .Children }}
+                                        {{ if hasPrefix .URL "http" }}
+                                            <a href="{{ .URL }}" target="_blank" rel="noopener noreferrer" class="nav-link nav-sublink {{ if $.IsMenuCurrent "main" . }}active{{ end }}">{{ .Name }}</a>
+                                        {{ else }}
+                                            <a href="{{ .URL }}" class="nav-link nav-sublink {{ if $.IsMenuCurrent "main" . }}active{{ end }}">{{ .Name }}</a>
+                                        {{ end }}
+                                    {{- end }}
+                                </div>
+                            {{- end }}
+                        </div>
+                    {{- end }}
                 </nav>
                 <div class="nav-toggle">
                     <span></span>
@@ -92,6 +146,71 @@
     <!-- JavaScript -->
     <script src="{{ "js/main.js" | absURL }}"></script>
     <script src="{{ "js/base.js" | absURL }}"></script>
+
+        <script>
+        // Mobile: expand/collapse submenu when tapping the parent menu item.
+        (function(){
+            const mq = window.matchMedia('(max-width: 768px)');
+
+            function closeAllExcept(el){
+                document.querySelectorAll('.nav-item.has-children.open').forEach(item=>{
+                    if(item !== el){
+                        item.classList.remove('open');
+                        const l = item.querySelector(':scope > a.nav-link'); if(l) l.setAttribute('aria-expanded','false');
+                    }
+                });
+            }
+
+            function initMobileSubmenu(){
+                document.querySelectorAll('.nav-item.has-children').forEach(item=>{
+                    const link = item.querySelector(':scope > a.nav-link');
+                    if(!link) return;
+                    link.setAttribute('aria-haspopup','true');
+                    link.setAttribute('aria-expanded', item.classList.contains('open') ? 'true' : 'false');
+
+                    // Remove any previous handler to avoid double-binding when this script runs again
+                    link.onclick = function(e){
+                        if(mq.matches){
+                            e.preventDefault();
+                            const wasOpen = item.classList.contains('open');
+                            if(!wasOpen){
+                                closeAllExcept(item);
+                                item.classList.add('open');
+                                link.setAttribute('aria-expanded','true');
+                            } else {
+                                item.classList.remove('open');
+                                link.setAttribute('aria-expanded','false');
+                            }
+                        }
+                        // On desktop clicks behave normally (hover/links)
+                    };
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', initMobileSubmenu);
+
+            // Close open submenus when switching to desktop sizes
+            window.addEventListener('resize', function(){
+                if(!mq.matches){
+                    document.querySelectorAll('.nav-item.has-children.open').forEach(item=>{
+                        item.classList.remove('open');
+                        const l = item.querySelector(':scope > a.nav-link'); if(l) l.setAttribute('aria-expanded','false');
+                    });
+                }
+            });
+
+            // Close submenus when clicking outside nav on mobile
+            document.addEventListener('click', function(e){
+                if(!mq.matches) return;
+                if(!e.target.closest('.nav-container')){
+                    document.querySelectorAll('.nav-item.has-children.open').forEach(item=>{
+                        item.classList.remove('open');
+                        const l = item.querySelector(':scope > a.nav-link'); if(l) l.setAttribute('aria-expanded','false');
+                    });
+                }
+            });
+        })();
+        </script>
 
 </body>
 </html>
