@@ -168,6 +168,37 @@
 .shop-buttons { display: none; }
 .shop-buttons.show { display: flex; flex-direction: column; gap: 0.25rem; }
 
+/* Shop link item styling: thumbnail + title */
+.shop-link {
+    display: flex;
+    align-items: flex-start; /* allow title to use vertical space */
+    gap: 1rem;
+    padding: 0.4rem 0.6rem;
+}
+.shop-thumb {
+    /* 150% of previous 56x84 => 84x126 (book-like portrait) */
+    width: 84px;
+    height: 126px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex: 0 0 auto;
+    background: #f0f0f0;
+}
+.shop-thumb.placeholder {
+    display: inline-block;
+    width: 84px;
+    height: 126px;
+    background: linear-gradient(135deg,#f6f7f9,#e9ecef);
+    border-radius: 4px;
+}
+.shop-title {
+    display: block;
+    flex: 1 1 auto;
+    line-height: 1.2;
+    font-size: 0.95rem;
+    word-break: break-word;
+}
+
 @keyframes slideDown {
     from {
         opacity: 0;
@@ -227,7 +258,11 @@
             {{ range . }}
                 {{ $title := .title | default .Title | default "Shop" }}
                 {{ $link := .link | default .url | default "#" }}
-                <a href="{{ $link }}" target="_blank" rel="noopener noreferrer" class="share-btn shop-link" style="display:block; text-align:left; padding:0.5rem 0.6rem; border-radius:6px; background:rgba(107,114,128,0.06); color:inherit; text-decoration:none;">{{ $title }}</a>
+                {{ $thumb := .thumbnail | default .thumbmail | default .image | default "" }}
+                <a href="{{ $link }}" target="_blank" rel="noopener noreferrer" class="share-btn shop-link" style="text-align:left; padding:0.25rem 0.4rem; border-radius:6px; background:rgba(107,114,128,0.04); color:inherit; text-decoration:none;">
+                    {{ if $thumb }}<img src="{{ $thumb }}" alt="{{ $title }} thumbnail" class="shop-thumb" loading="lazy" />{{ end }}
+                    <span class="shop-title">{{ $title }}</span>
+                </a>
             {{ end }}
         </div>
         {{ end }}
