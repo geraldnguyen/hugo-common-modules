@@ -164,6 +164,10 @@
     display: flex;
 }
 
+/* Shop buttons (hidden by default, shown when .show is toggled) */
+.shop-buttons { display: none; }
+.shop-buttons.show { display: flex; flex-direction: column; gap: 0.25rem; }
+
 @keyframes slideDown {
     from {
         opacity: 0;
@@ -213,6 +217,21 @@
                 </svg>
             </a>
         </div>
+        {{ with $page.Params.shop_links }}
+        {{ if gt (len .) 0 }}
+        <button class="share-toggle shop-toggle" id="shop-toggle" aria-label="Shop links" aria-expanded="false">
+            <span class="material-icons">shopping_cart</span>
+        </button>
+
+    <div class="shop-buttons" id="shop-buttons">
+            {{ range . }}
+                {{ $title := .title | default .Title | default "Shop" }}
+                {{ $link := .link | default .url | default "#" }}
+                <a href="{{ $link }}" target="_blank" rel="noopener noreferrer" class="share-btn shop-link" style="display:block; text-align:left; padding:0.5rem 0.6rem; border-radius:6px; background:rgba(107,114,128,0.06); color:inherit; text-decoration:none;">{{ $title }}</a>
+            {{ end }}
+        </div>
+        {{ end }}
+        {{ end }}
     </div>
     <script>
     (function(){
@@ -288,6 +307,26 @@
                     });
                 });
             });
+
+            // Shopping links toggle (if present)
+            var shopToggle = document.getElementById('shop-toggle');
+            var shopButtons = document.getElementById('shop-buttons');
+            if (shopToggle && shopButtons) {
+                shopToggle.addEventListener('click', function(ev){
+                    ev.preventDefault();
+                    shopButtons.classList.toggle('show');
+                    var expanded = shopButtons.classList.contains('show');
+                    shopToggle.setAttribute('aria-expanded', expanded);
+                });
+
+                // Close shop when clicking outside
+                document.addEventListener('click', function(event){
+                    if (!shopToggle.contains(event.target) && !shopButtons.contains(event.target)) {
+                        shopButtons.classList.remove('show');
+                        shopToggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
         });
     })();
     </script>
