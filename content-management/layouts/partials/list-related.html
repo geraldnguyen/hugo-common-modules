@@ -9,7 +9,7 @@
     {{ partial "list-related.html" . }}
 */}}
 {{ $page := . }}
-{{ $card := "story" }}
+{{ $card := .Type | singularize }}
 {{/* accept either dict input or page as dot */}}
 {{ if reflect.IsMap . }}
   {{ with index . "page" }}{{ $page = . }}{{ end }}
