@@ -58,7 +58,7 @@
   <!-- Pagination info -->
   {{ if gt .Paginator.TotalPages 1 }}
   <div class="taxonomy-pagination-info">
-    Showing {{ .Site.Params.pagination.pagerSize | default 12 }} per page of {{ len .Pages }} (Page {{ .Paginator.PageNumber }} of {{ .Paginator.TotalPages }})
+    Showing {{ .Paginator.PagerSize }} per page of {{ len .Pages }} (Page {{ .Paginator.PageNumber }} of {{ .Paginator.TotalPages }})
   </div>
   {{ end }}
 
