@@ -15,8 +15,7 @@
 {{/* Use the first one of site images as the fallback. */}}
 {{- if and (not $imgParams) (not $imgs) }}
   {{- with site.Params.images }}
-    {{- $shuffled := shuffle . }}
-    {{- $imgParams = (slice (index $shuffled 0)) }}
+    {{- $imgParams = shuffle . }}
   {{- end }}
 {{- end }}
 {{/* Parse page's images parameter. */}}
