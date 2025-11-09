@@ -1,6 +1,8 @@
 {{- $cardType := .Section | singularize -}}
 {{- if eq .Kind "term" -}}
 {{- $cardType = .Site.Params.termCardType -}}
+{{- else if and (eq .Kind "taxonomy") .Site.Params.taxonomyCardType -}}
+{{- $cardType = .Site.Params.taxonomyCardType -}}
 {{- end -}}
 
 {{- $cardTypePlural := $cardType | lower | pluralize -}}
