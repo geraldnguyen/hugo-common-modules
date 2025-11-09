@@ -1,0 +1,12 @@
+{{- $cardType := .Section | singularize -}}
+
+{{- $cardPartial := print $cardType "-card.json" -}}
+{{- $partialPath := printf "partials/%s" $cardPartial -}}
+
+{{- /* If there's a card type and the corresponding partial exists, render it. */ -}}
+{{- if and $cardType (templates.Exists $partialPath) -}}
+	{{- partial $cardPartial . -}}
+{{- else -}}
+  {}
+{{- end -}}
+
