@@ -1,0 +1,31 @@
+{{- $cardType := .Section | singularize -}}
+{{- if eq .Kind "term" -}}
+{{- $cardType = .Site.Params.termCardType -}}
+{{- end -}}
+
+{{- $cardTypePlural := $cardType | lower | pluralize -}}
+{{- $cardPartial := print $cardType "-card.json" -}}
+{{- $partialPath := printf "partials/%s" $cardPartial -}}
+
+{{- $children := .Pages -}}
+{{- $total := $children.Len -}}
+{
+ "meta": {
+    "title": {{- .Title | jsonify -}},
+    "description": {{- .Description | default "" | jsonify -}},
+    "kind": {{- .Kind | jsonify -}},
+    "total": {{ $total | jsonify }},
+    "generated_at": "{{ now.Format "2006-01-02T15:04:05Z07:00" }}"
+  }
+  {{- /* If there's a card type and the corresponding partial exists, render it. */ -}}
+{{- if and $cardType (templates.Exists $partialPath) -}}
+  ,
+  "{{- $cardTypePlural -}}": [
+{{- range $i, $story := $children -}}
+    {{- if $i }},{{ end }}
+    {{ partial $cardPartial . }}
+{{- end }}
+  ]
+{{- end -}}
+}
+
