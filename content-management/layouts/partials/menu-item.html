@@ -1,0 +1,25 @@
+{{/*
+  Partial: menu-item.html
+  Params (passed as a dict):
+    - Item: the menu entry (menu.Item)
+    - Page: the page context (usually $)
+    - MenuName: the menu name (e.g. "main")
+  Renders the menu item and its children (submenu) preserving original markup/behaviour.
+*/}}
+{{- $page := .Page -}}
+{{- $menuName := .MenuName -}}
+
+<div class="nav-item{{ if gt (len .Item.Children) 0 }} has-children{{ end }}">
+    <a href="{{ .Item.URL }}" class="nav-link {{ if $page.IsMenuCurrent $menuName .Item }}active{{ end }}">{{ .Item.Name }}</a>
+    {{- if gt (len .Item.Children) 0 }}
+        <div class="nav-submenu">
+            {{- range $child := .Item.Children }}
+                {{- if hasPrefix $child.URL "http" }}
+                    <a href="{{ $child.URL }}" target="_blank" rel="noopener noreferrer" class="nav-link nav-sublink {{ if $page.IsMenuCurrent $menuName $child }}active{{ end }}">{{ $child.Name }}</a>
+                {{- else }}
+                    <a href="{{ $child.URL }}" class="nav-link nav-sublink {{ if $page.IsMenuCurrent $menuName $child }}active{{ end }}">{{ $child.Name }}</a>
+                {{- end }}
+            {{- end }}
+        </div>
+    {{- end }}
+</div>

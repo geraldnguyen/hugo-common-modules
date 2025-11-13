@@ -98,20 +98,8 @@
 
                 <nav class="nav-menu">
                     {{- range .Site.Menus.main }}
-                        <div class="nav-item{{ if gt (len .Children) 0 }} has-children{{ end }}">
-                            <a href="{{ .URL }}" class="nav-link {{ if $.IsMenuCurrent "main" . }}active{{ end }}">{{ .Name }}</a>
-                            {{- if gt (len .Children) 0 }}
-                                <div class="nav-submenu">
-                                    {{- range .Children }}
-                                        {{ if hasPrefix .URL "http" }}
-                                            <a href="{{ .URL }}" target="_blank" rel="noopener noreferrer" class="nav-link nav-sublink {{ if $.IsMenuCurrent "main" . }}active{{ end }}">{{ .Name }}</a>
-                                        {{ else }}
-                                            <a href="{{ .URL }}" class="nav-link nav-sublink {{ if $.IsMenuCurrent "main" . }}active{{ end }}">{{ .Name }}</a>
-                                        {{ end }}
-                                    {{- end }}
-                                </div>
-                            {{- end }}
-                        </div>
+                        {{- $page := $ -}}
+                        {{- partial "menu-item.html" (dict "Item" . "Page" $page "MenuName" "main") -}}
                     {{- end }}
                 </nav>
                 <div class="nav-toggle">
