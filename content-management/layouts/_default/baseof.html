@@ -97,6 +97,35 @@
                 </div>
 
                 <nav class="nav-menu">
+                    <div class="refresh-nav-menu">
+                        <todo: auto refresh toggle>
+                        <todo: force refresh icon>
+                        <todo: default menu items>
+                            {{- range .Site.Menus.top }}
+                                {{- $page := $ -}}
+                                {{- partial "menu-item.html" (dict "Item" . "Page" $page "MenuName" "main") -}}
+                            {{- end }}
+                        </todo:>
+                        <todo: refresh menu script>
+                            - site param: menu length e.g. 4
+                            - site param: refresh interval e.g. 15 mins (default: 5 minutes)
+                            - mode: "random"
+                            - candidates: a dictionary of items to choose from:
+                                + The keys can be: taxonomies, terms, pages
+                                + The value can be:
+                                    * "self": link to the key itself
+                                    * "children": link to a random item under the key
+                                    * "both": both self and children
+                            - Candidate info: candidate's `permalink` in JSON format e.g. `/tags/index.json`
+                            - Fetch all candidates (self/children/both), pick random N items (N = menu length param), and render them as menu items. 
+                            - Cache the selected items for the refresh interval duration.
+                            - If no candidates found, fallback to default menu items.
+
+                        </todo:>
+                    </div>
+                    
+                    
+
                     {{- range .Site.Menus.main }}
                         {{- $page := $ -}}
                         {{- partial "menu-item.html" (dict "Item" . "Page" $page "MenuName" "main") -}}
