@@ -4,12 +4,13 @@
     - Item: the menu entry (menu.Item)
     - Page: the page context (usually $)
     - MenuName: the menu name (e.g. "main")
+    - Type: Dynimic or default
   Renders the menu item and its children (submenu) preserving original markup/behaviour.
 */}}
 {{- $page := .Page -}}
 {{- $menuName := .MenuName -}}
 
-<div class="nav-item{{ if gt (len .Item.Children) 0 }} has-children{{ end }}">
+<div class="nav-item{{ if gt (len .Item.Children) 0 }} has-children{{ end }} {{ if eq .Type "dynamic" }} dynamic-item{{ end }}">
     <a href="{{ .Item.URL }}" class="nav-link {{ if $page.IsMenuCurrent $menuName .Item }}active{{ end }}">{{ .Item.Name }}</a>
     {{- if gt (len .Item.Children) 0 }}
         <div class="nav-submenu">

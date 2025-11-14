@@ -79,6 +79,21 @@
     }
     </style>
 
+    <style>
+    /* Refresh nav menu controls */
+    .refresh-nav-menu { display: inline-block; vertical-align: middle; margin-left: 1rem; }
+    .refresh-nav-menu .refresh-controls { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem; }
+    .refresh-nav-menu .auto-refresh-label { display:flex; align-items:center; gap:0.3rem; font-size:0.9rem; color:var(--muted,#333); }
+    .refresh-nav-menu .auto-refresh-toggle { width:1.1rem; height:1.1rem; }
+    .refresh-nav-menu .force-refresh { background:transparent; border:1px solid rgba(0,0,0,0.06); padding:0.2rem 0.45rem; border-radius:6px; cursor:pointer; font-size:1rem; }
+    .refresh-nav-menu .dynamic-items { display:inline-block; }
+    .refresh-nav-menu .nav-item { margin-right:0.4rem; }
+    @media (max-width:768px) {
+        .refresh-nav-menu { display:block; margin:0.5rem 0 0; }
+        .refresh-nav-menu .refresh-controls { margin-bottom:0.5rem; }
+    }
+    </style>
+
     {{ partial "html_head.html" . }}
 
 
@@ -97,6 +112,8 @@
                 </div>
 
                 <nav class="nav-menu">
+                    <!-- 
+                    DESIGN REFERENCE:
                     <div class="refresh-nav-menu">
                         <todo: auto refresh toggle>
                         <todo: force refresh icon>
@@ -122,13 +139,21 @@
                             - If no candidates found, fallback to default menu items.
 
                         </todo:>
+                    </div> 
+                    -->
+
+                    <div class="refresh-nav-menu" data-menu-length="{{ with .Site.Params.menuRefresh.length }}{{ . }}{{ else }}4{{ end }}" data-refresh-interval-min="{{ with .Site.Params.menuRefresh.interval }}{{ . }}{{ else }}5{{ end }}" data-candidate-sources='{{ .Site.Params.menuRefresh.candidates | jsonify }}'>
+                        <button type="button" class="force-refresh" title="Refresh Menu">&#x21bb;</button>
+
+                        <div class="menu-items dynamic-items" aria-live="polite" role="navigation">
+                            {{- range .Site.Menus.top }}
+                                {{- partial "menu-item.html" (dict "Item" . "Page" $ "MenuName" "top" "Type" "dynamic") -}}
+                            {{- end }}
+                        </div>
                     </div>
-                    
-                    
 
                     {{- range .Site.Menus.main }}
-                        {{- $page := $ -}}
-                        {{- partial "menu-item.html" (dict "Item" . "Page" $page "MenuName" "main") -}}
+                        {{- partial "menu-item.html" (dict "Item" . "Page" $ "MenuName" "main") -}}
                     {{- end }}
                 </nav>
                 <div class="nav-toggle">
@@ -163,6 +188,186 @@
     <!-- JavaScript -->
     <script src="{{ "js/main.js" | absURL }}"></script>
     <script src="{{ "js/base.js" | absURL }}"></script>
+
+        <script>
+        // Refresh nav menu: dynamic random menu items with caching and auto-refresh
+        (function(){
+            const container = document.querySelector('.refresh-nav-menu');
+            if(!container) return;
+
+            const menuLength = parseInt(container.dataset.menuLength) || 4;
+            const refreshIntervalMin = parseInt(container.dataset.refreshIntervalMin) || 5;
+            const dynamicItemsEl = container.querySelector('.dynamic-items');
+            const defaultItemsEl = container.querySelector('.default-items');
+            const autoRefreshToggle = container.querySelector('.auto-refresh-toggle');
+            const forceRefreshBtn = container.querySelector('.force-refresh');
+
+            // Collect all available menu items from the dynamic-items container
+            const allMenuItems = Array.from(dynamicItemsEl.querySelectorAll('.nav-item, a[class*="nav"]'));
+            
+            // Build candidates array from available menu items
+            const candidates = allMenuItems.map(item => ({
+                title: item.textContent.trim(),
+                html: item.outerHTML
+            }));
+
+            // Fetch additional candidates from configured sources if available
+            const candidateConfig = container.dataset.candidateSources;
+            if(candidateConfig){
+                try {
+                    const sources = JSON.parse(candidateConfig);
+                    
+                    // Fetch candidates from each configured source
+                    const fetchPromises = [];
+                    
+                    for(const [key, mode] of Object.entries(sources)){
+                        fetchPromises.push(
+                            fetch(key + '/index.json')
+                                .then(r => r.ok ? r.json() : null)
+                                .then(data => {
+                                    if(!data || !data.taxonomies) return;
+                                    data.taxonomies.forEach(tax => {
+                                        if(mode === 'self' || mode === 'both'){
+                                            candidates.push({title: tax.title, url: tax.url});
+                                        }
+                                        if((mode === 'children' || mode === 'both') && tax.terms){
+                                            tax.terms.forEach(term => {
+                                                candidates.push({title: term.title, url: term.url});
+                                            });
+                                        }
+                                    });
+                                })
+                                .catch(() => {})
+                        );
+                        
+                    }
+                    
+                    // Wait for all fetches to complete before initializing
+                    Promise.all(fetchPromises).finally(() => {
+                        initMenu();
+                    });
+                } catch(e){
+                    // If parsing fails, just use existing candidates
+                    initMenu();
+                }
+            } else {
+                // No additional sources configured
+                initMenu();
+            }
+
+            const CACHE_KEY = 'refreshNavMenu_selected';
+            const CACHE_TS_KEY = 'refreshNavMenu_timestamp';
+            const AUTO_REFRESH_KEY = 'refreshNavMenu_autoRefresh';
+
+            function initMenu(){
+                function shuffle(arr){
+                    const copy = arr.slice();
+                    for(let i=copy.length-1; i>0; i--){
+                        const j = Math.floor(Math.random()*(i+1));
+                        [copy[i],copy[j]] = [copy[j],copy[i]];
+                    }
+                    return copy;
+                }
+
+                function pickRandom(count){
+                    if(candidates.length === 0) return [];
+                    const shuffled = shuffle(candidates);
+                    return shuffled.slice(0, Math.min(count, shuffled.length));
+                }
+
+                function renderItems(items){
+                    if(!items || items.length === 0){
+                        // Show default items
+                        dynamicItemsEl.style.display = 'none';
+                        if(defaultItemsEl) defaultItemsEl.style.display = '';
+                        return;
+                    }
+                    // Render dynamic items
+                    let html = '';
+                    items.forEach(item=>{
+                        if(item.html){
+                            html += item.html;
+                        } else if(item.url){
+                            html += `<a href="${item.url}" class="nav-item nav-link">${item.title}</a>`;
+                        }
+                    });
+                    dynamicItemsEl.innerHTML = html;
+                    dynamicItemsEl.style.display = '';
+                    if(defaultItemsEl) defaultItemsEl.style.display = 'none';
+                }
+
+                function getCached(){
+                    try {
+                        const cached = localStorage.getItem(CACHE_KEY);
+                        const ts = localStorage.getItem(CACHE_TS_KEY);
+                        if(!cached || !ts) return null;
+                        const age = Date.now() - parseInt(ts);
+                        const maxAge = refreshIntervalMin * 60 * 1000;
+                        if(age > maxAge) return null;
+                        return JSON.parse(cached);
+                    } catch(e){ return null; }
+                }
+
+                function setCached(items){
+                    try {
+                        localStorage.setItem(CACHE_KEY, JSON.stringify(items));
+                        localStorage.setItem(CACHE_TS_KEY, Date.now().toString());
+                    } catch(e){}
+                }
+
+                function refreshMenu(force = false){
+                    let items = force ? null : getCached();
+                    if(!items){
+                        items = pickRandom(menuLength);
+                        setCached(items);
+                    }
+                    renderItems(items);
+                }
+
+                function startAutoRefresh(){
+                    if(window.refreshNavInterval) clearInterval(window.refreshNavInterval);
+                    window.refreshNavInterval = setInterval(()=>{
+                        refreshMenu(true);
+                    }, refreshIntervalMin * 60 * 1000);
+                }
+
+                function stopAutoRefresh(){
+                    if(window.refreshNavInterval){
+                        clearInterval(window.refreshNavInterval);
+                        window.refreshNavInterval = null;
+                    }
+                }
+
+                // Initialize auto-refresh toggle state from localStorage
+                if(autoRefreshToggle){
+                    const autoEnabled = localStorage.getItem(AUTO_REFRESH_KEY) === 'true';
+                    autoRefreshToggle.checked = autoEnabled;
+                    if(autoEnabled) startAutoRefresh();
+
+                    autoRefreshToggle.addEventListener('change', function(){
+                        const enabled = this.checked;
+                        localStorage.setItem(AUTO_REFRESH_KEY, enabled.toString());
+                        if(enabled){
+                            startAutoRefresh();
+                        } else {
+                            stopAutoRefresh();
+                        }
+                    });
+                }
+
+                if(forceRefreshBtn){
+                    forceRefreshBtn.addEventListener('click', function(){
+                        refreshMenu(true);
+                    });
+                }
+
+                // Initial render - only randomize if there are extra candidates beyond static menu
+                if(candidates.length > allMenuItems.length){
+                    refreshMenu();
+                }
+            }
+        })();
+        </script>
 
         <script>
         // Mobile: expand/collapse submenu when tapping the parent menu item.
