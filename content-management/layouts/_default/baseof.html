@@ -144,13 +144,11 @@
 
                     <div class="refresh-nav-menu" data-menu-length="{{ with .Site.Params.menuRefresh.length }}{{ . }}{{ else }}4{{ end }}" data-refresh-interval-min="{{ with .Site.Params.menuRefresh.interval }}{{ . }}{{ else }}5{{ end }}" data-candidate-sources='{{ .Site.Params.menuRefresh.candidates | jsonify }}'>
                         <button type="button" class="force-refresh" title="Refresh Menu">&#x21bb;</button>
-
-                        <div class="menu-items dynamic-items" aria-live="polite" role="navigation">
-                            {{- range .Site.Menus.top }}
-                                {{- partial "menu-item.html" (dict "Item" . "Page" $ "MenuName" "top" "Type" "dynamic") -}}
-                            {{- end }}
-                        </div>
                     </div>
+
+                    {{- range .Site.Menus.top }}
+                        {{- partial "menu-item.html" (dict "Item" . "Page" $ "MenuName" "top" "Type" "dynamic") -}}
+                    {{- end }}
 
                     {{- range .Site.Menus.main }}
                         {{- partial "menu-item.html" (dict "Item" . "Page" $ "MenuName" "main") -}}
@@ -191,25 +189,26 @@
 
         <script>
         // Refresh nav menu: dynamic random menu items with caching and auto-refresh
-        (function(){
+        document.addEventListener('DOMContentLoaded', function(){
             const container = document.querySelector('.refresh-nav-menu');
-            if(!container) return;
+            if(!container) {
+                console.error('refresh-nav-menu container not found!');
+                return;
+            }
 
             const menuLength = parseInt(container.dataset.menuLength) || 4;
             const refreshIntervalMin = parseInt(container.dataset.refreshIntervalMin) || 5;
-            const dynamicItemsEl = container.querySelector('.dynamic-items');
-            const defaultItemsEl = container.querySelector('.default-items');
+
             const autoRefreshToggle = container.querySelector('.auto-refresh-toggle');
             const forceRefreshBtn = container.querySelector('.force-refresh');
 
-            // Collect all available menu items from the dynamic-items container
-            const allMenuItems = Array.from(dynamicItemsEl.querySelectorAll('.nav-item, a[class*="nav"]'));
+            const menuContainer = document.querySelector('.nav-menu');
+            if(!menuContainer) {
+                console.error('nav-menu container not found!');
+                return;
+            }
             
-            // Build candidates array from available menu items
-            const candidates = allMenuItems.map(item => ({
-                title: item.textContent.trim(),
-                html: item.outerHTML
-            }));
+            const candidates = []
 
             // Fetch additional candidates from configured sources if available
             const candidateConfig = container.dataset.candidateSources;
@@ -277,23 +276,36 @@
 
                 function renderItems(items){
                     if(!items || items.length === 0){
-                        // Show default items
-                        dynamicItemsEl.style.display = 'none';
-                        if(defaultItemsEl) defaultItemsEl.style.display = '';
                         return;
                     }
-                    // Render dynamic items
-                    let html = '';
-                    items.forEach(item=>{
-                        if(item.html){
-                            html += item.html;
-                        } else if(item.url){
-                            html += `<a href="${item.url}" class="nav-item nav-link">${item.title}</a>`;
+
+                    // Collect all menu items that follow the refresh-nav-menu container
+                    // These are the dynamic menu items from .Site.Menus.top
+                    const allMenuItems = Array.from(menuContainer.querySelectorAll('.nav-item'));
+
+                    // Remove all current dynamic menu items
+                    allMenuItems.forEach(item => {
+                        if(item.classList.contains('dynamic-item')) {
+                            item.remove();
+                            allMenuItems.splice(allMenuItems.indexOf(item), 1);
                         }
                     });
-                    dynamicItemsEl.innerHTML = html;
-                    dynamicItemsEl.style.display = '';
-                    if(defaultItemsEl) defaultItemsEl.style.display = 'none';
+                    
+                    
+                    // Show only the selected items
+                    items.forEach((item, index) => {
+                        if(item.url){
+                            // This is a dynamically fetched item - create and insert it
+                            const link = document.createElement('a');
+                            link.href = item.url;
+                            link.className = 'nav-item nav-link dynamic-item';
+                            link.textContent = item.title;
+                            
+                            // Insert after the refresh button
+                            menuContainer.insertBefore(link, allMenuItems[index]);
+                            
+                        }
+                    });
                 }
 
                 function getCached(){
@@ -364,9 +376,13 @@
                 // Initial render - only randomize if there are extra candidates beyond static menu
                 if(candidates.length > allMenuItems.length){
                     refreshMenu();
+                } else {
+                    // Just show all items if we don't have extra candidates
+                    console.log('Showing all menu items, no randomization');
+                    allMenuItems.forEach(item => item.style.display = '');
                 }
             }
-        })();
+        });
         </script>
 
         <script>
