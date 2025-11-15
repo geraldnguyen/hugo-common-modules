@@ -221,19 +221,19 @@
                     
                     for(const [key, mode] of Object.entries(sources)){
                         fetchPromises.push(
-                            fetch(key + '/index.json')
+                            fetch(key)
                                 .then(r => r.ok ? r.json() : null)
                                 .then(data => {
-                                    if(!data || !data.taxonomies) return;
+                                    if(!data) return;
+                                    if(mode === 'self' || mode === 'both'){
+                                        candidates.push({title: data.meta.title, url: data.meta.permalink_html});
+                                    }
+
+                                    if(!data.taxonomies) return;
                                     data.taxonomies.forEach(tax => {
-                                        if(mode === 'self' || mode === 'both'){
-                                            candidates.push({title: tax.title, url: tax.url});
-                                        }
-                                        if((mode === 'children' || mode === 'both') && tax.terms){
-                                            tax.terms.forEach(term => {
-                                                candidates.push({title: term.title, url: term.url});
-                                            });
-                                        }
+                                        if(mode === 'children' || mode === 'both'){
+                                            candidates.push({title: tax.title, url: tax.permalink_html});
+                                        }                                
                                     });
                                 })
                                 .catch(() => {})
@@ -345,6 +345,7 @@
                     window.refreshNavInterval = setInterval(()=>{
                         refreshMenu(true);
                     }, refreshIntervalMin * 60 * 1000);
+                    refreshMenu(true);
                 }
 
                 function stopAutoRefresh(){
