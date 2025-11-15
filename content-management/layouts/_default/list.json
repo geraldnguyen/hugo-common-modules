@@ -15,6 +15,10 @@
  "meta": {
     "title": {{- .Title | jsonify -}},
     "description": {{- .Description | default "" | jsonify -}},
+    "permalink": {{ .Permalink | jsonify }},
+{{- with .OutputFormats.Get "html" -}}
+  "permalink_html": {{ .Permalink | jsonify }},
+{{- end }}
     "kind": {{- .Kind | jsonify -}},
     "total": {{ $total | jsonify }},
     "generated_at": "{{ now.Format "2006-01-02T15:04:05Z07:00" }}"
