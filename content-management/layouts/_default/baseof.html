@@ -197,7 +197,7 @@
             }
 
             const menuLength = parseInt(container.dataset.menuLength) || 4;
-            const refreshIntervalMin = parseInt(container.dataset.refreshIntervalMin) || 5;
+            const refreshIntervalMin = 1; parseInt(container.dataset.refreshIntervalMin) || 5;
 
             const autoRefreshToggle = container.querySelector('.auto-refresh-toggle');
             const forceRefreshBtn = container.querySelector('.force-refresh');
@@ -330,6 +330,8 @@
                 }
 
                 function refreshMenu(force = false){
+                    const now = new Date().toISOString();
+                    console.log(`[${now}] Refresh nav menu, force = ${force}`);
                     let items = force ? null : getCached();
                     if(!items){
                         items = pickRandom(menuLength);
@@ -353,21 +355,7 @@
                 }
 
                 // Initialize auto-refresh toggle state from localStorage
-                if(autoRefreshToggle){
-                    const autoEnabled = localStorage.getItem(AUTO_REFRESH_KEY) === 'true';
-                    autoRefreshToggle.checked = autoEnabled;
-                    if(autoEnabled) startAutoRefresh();
-
-                    autoRefreshToggle.addEventListener('change', function(){
-                        const enabled = this.checked;
-                        localStorage.setItem(AUTO_REFRESH_KEY, enabled.toString());
-                        if(enabled){
-                            startAutoRefresh();
-                        } else {
-                            stopAutoRefresh();
-                        }
-                    });
-                }
+                startAutoRefresh();
 
                 if(forceRefreshBtn){
                     forceRefreshBtn.addEventListener('click', function(){
