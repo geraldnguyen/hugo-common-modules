@@ -284,10 +284,12 @@
                     const allMenuItems = Array.from(menuContainer.querySelectorAll('.nav-item'));
 
                     // Remove all current dynamic menu items
+                    let firstNonDynamic = null;
                     allMenuItems.forEach(item => {
                         if(item.classList.contains('dynamic-item')) {
                             item.remove();
-                            allMenuItems.splice(allMenuItems.indexOf(item), 1);
+                        } else {
+                            firstNonDynamic = firstNonDynamic || item;
                         }
                     });
                     
@@ -302,7 +304,7 @@
                             link.textContent = item.title;
                             
                             // Insert after the refresh button
-                            menuContainer.insertBefore(link, allMenuItems[index]);
+                            menuContainer.insertBefore(link, firstNonDynamic);
                             
                         }
                     });
@@ -371,15 +373,6 @@
                     forceRefreshBtn.addEventListener('click', function(){
                         refreshMenu(true);
                     });
-                }
-
-                // Initial render - only randomize if there are extra candidates beyond static menu
-                if(candidates.length > allMenuItems.length){
-                    refreshMenu();
-                } else {
-                    // Just show all items if we don't have extra candidates
-                    console.log('Showing all menu items, no randomization');
-                    allMenuItems.forEach(item => item.style.display = '');
                 }
             }
         });
