@@ -1,0 +1,34 @@
+{{/*
+  Shortcode: content-card
+  Usage: {{< content-card path="section/my-page" >}} or {{< content-card "section/my-page" >}}
+  - `path` must be a path relative to the `content` directory (no leading `content/`).
+  The shortcode loads the page and invokes the matching card partial named
+  `<section-singular>-card.html` (only if that partial exists).
+*/}}
+
+{{ $path := .Get "path" | default (.Get 0) }}
+{{ if not $path }}
+  {{/* no path provided; nothing to render */}}
+  {{ return }}
+{{ end }}
+
+{{- $page := site.GetPage $path -}}
+{{- if not $page -}}
+  {{- $trim := cond (hasPrefix $path "/") (replaceRE "^/" "" $path) $path -}}
+  {{- $page = site.GetPage $trim -}}
+{{- end -}}
+{{- if not $page -}}
+  {{- $indexPath := printf "%s/index" (replaceRE "/$" "" $path) -}}
+  {{- $page = site.GetPage $indexPath -}}
+{{- end -}}
+
+{{ if not $page }}
+  {{/* Page not found; render nothing */}}
+  {{ return }}
+{{ end }}
+
+{{ $cardType := $page.Section }}
+{{ $cardTypeSingular := $cardType | lower | singularize }}
+{{ $cardPartial := printf "%s-card.html" $cardTypeSingular }}
+
+{{ partial $cardPartial $page }}
