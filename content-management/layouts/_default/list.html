@@ -1,0 +1,26 @@
+{{ define "main" }}
+
+{{ $cardType := .Params.card | or .Section }}
+{{ $cardTypePlural := $cardType | lower | pluralize }}
+{{ $cardPartial := print $cardType "-card" ".html" }}
+
+<div class="list-page">
+    <div class="container">
+        <header class="page-header">
+            <h1>{{ .Title }}</h1>
+            <p>{{ .Content }}</p>
+        </header>
+
+        {{- if templates.Exists $cardPartial -}}
+        <div class="{{- $cardTypePlural -}}-grid" id="random-{{- $cardTypePlural -}}-grid">
+            {{- $allCards := where .Site.RegularPages "Section" $cardTypePlural -}}
+            {{- $allCards = where $allCards "Draft" false -}}
+            {{ range $allCards }}
+                {{ partial $cardPartial . }}
+            {{ end }}
+        </div>
+        {{- end }}
+
+    </div>
+</div>
+{{ end }}
