@@ -1,0 +1,41 @@
+{{- /*
+  Partial: fb-video.html
+  Expects shortcode context `.` when called.
+  Video ID lookup order: `.Get "id"` -> front matter `facebook_video_id` -> positional `.Get 0`.
+  If the resolved value looks like a URL (starts with http), it's used as the video href.
+  Otherwise the partial builds a Facebook video URL using `video.php?v={id}`.
+*/ -}}
+
+{{- $id := default (.Get 0) (default .Page.Params.facebook_video_id (.Get "id")) -}}
+
+{{- if not $id -}}
+  {{- errorf "fb-video partial: missing video id; provide as param 'id', first positional param, or set 'facebook_video_id' in front matter" -}}
+{{- end -}}
+
+{{- $width := or (.Get "width") "560" -}}
+{{- $height := or (.Get "height") "315" -}}
+{{- $class := .Get "class" -}}
+{{- $title := or (.Get "title") "Facebook video" -}}
+{{- $loading := .Get "loading" -}}
+{{- $href := "" -}}
+{{- if findRE `^https?://` $id -}}
+  {{- $href = $id -}}
+{{- else -}}
+  {{- $href = printf "https://www.facebook.com/video.php?v=%v" $id -}}
+{{- end -}}
+
+{{- $src := printf "https://www.facebook.com/plugins/video.php?href=%s&show_text=0&width=%s" (urlquery $href) $width -}}
+
+<div{{ if $class }} class="{{ $class }}"{{ end }}>
+  <iframe
+    src="{{ $src }}"
+    width="{{ $width }}" height="{{ $height }}"
+    title="{{ $title }}"
+    style="border:none;overflow:hidden"
+    scrolling="no"
+    frameborder="0"
+    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"
+    allowfullscreen
+    {{- if $loading }} loading="{{ $loading }}"{{ end -}}
+  ></iframe>
+</div>
