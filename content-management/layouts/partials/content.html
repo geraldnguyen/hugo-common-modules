@@ -35,7 +35,8 @@
                                                 {{ $suf := cond (isset $suffixes $key) (index $suffixes $key) "" }}
                                                 {{ with index $page.Params $key }}
                                                     {{ $t := printf "%T" . }}
-                                                    {{ if or (eq $t "int") (eq $t "float64") (eq $t "string") }}
+                                                    {{ $isSlice := gt (len (findRE "^\\[\\]" $t)) 0 }}
+                                                    {{ if not $isSlice }}
                                                         {{/* scalar value */}}
                                                         {{ if ne $suf "" }}
                                                             <span class="{{ $key }}-tag meta-tag">{{ printf "%v %s" . $suf }}</span>
