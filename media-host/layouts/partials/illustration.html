@@ -60,15 +60,8 @@
 
   <div class="panels">
     {{- /* Image panel: render illustration.webp using site.image_host or site.BaseURL */ -}}
-    {{- $imgHost := (site.Params.image_host | default (replaceRE `/$` "" site.BaseURL)) -}}
-    {{- $imgPath := "illustration.webp" -}}
-    {{- if findRE `^/` $imgPath -}}
-      {{- $imgSrc := printf "%s%s" $imgHost $imgPath -}}
-    {{- else -}}
-      {{- $imgSrc := printf "%s/%s" $imgHost $imgPath -}}
-    {{- end -}}
-    {{- /* Choose whichever computed $imgSrc is in scope for rendering */ -}}
-    {{- $imgSrc := cond (findRE `^/` $imgPath) (printf "%s%s" $imgHost $imgPath) (printf "%s/%s" $imgHost $imgPath) -}}
+    {{- $imgSrc := "illustration.webp" -}}
+
 
     <div class="panel panel-image" data-panel="image">
       {{ partial "figure.html" (dict "Page" $page.Page "src" $imgSrc "class" "illustration-image") }}
