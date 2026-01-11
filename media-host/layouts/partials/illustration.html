@@ -34,6 +34,14 @@
 {{- if $facebookID }}
   {{- $available = $available | append "facebook" -}}
 {{- end -}}
+{{- /* Add Amazon tab when page has shop_links */ -}}
+{{- $shopLinks := slice -}}
+{{- if ne (index $page "Page") nil -}}
+  {{- $shopLinks = $page.Page.Params.shop_links -}}
+{{- end -}}
+{{- if and (ne $shopLinks nil) (gt (len $shopLinks) 0) -}}
+  {{- $available = $available | append "amazon" -}}
+{{- end -}}
 
 {{- $default := (or $params.page_illustration_default "image") | lower -}}
 {{- if not (in $available $default) -}}
@@ -56,6 +64,7 @@
     <button type="button" class="tab-btn" data-tab="image">Image</button>
     {{- if $youtubeID }}<button type="button" class="tab-btn" data-tab="youtube">YouTube</button>{{- end }}
     {{- if $facebookID }}<button type="button" class="tab-btn" data-tab="facebook">Facebook Reel</button>{{- end }}
+    {{- if and (ne $shopLinks nil) (gt (len $shopLinks) 0) }}<button type="button" class="tab-btn" data-tab="amazon">Amazon</button>{{- end }}
   </div>
 
   <div class="panels">
@@ -76,6 +85,20 @@
     {{- if $facebookID }}
       <div class="panel panel-facebook" data-panel="facebook">
         {{ partial "fb-video.html" (dict "Page" $page.Page "id" $facebookID "width" "560" "height" "315" "lazy" true) }}
+      </div>
+    {{- end }}
+
+    {{- if and (ne $shopLinks nil) (gt (len $shopLinks) 0) }}
+      <div class="panel panel-amazon" data-panel="amazon">
+        {{- range $shopLinks }}
+          {{- $title := .title | default .Title | default "Shop" -}}
+          {{- $link := .link | default .url | default "#" -}}
+          {{- $thumb := .thumbnail | default .thumbmail | default .image | default "" -}}
+          <a href="{{ $link }}" target="_blank" rel="noopener noreferrer" class="shop-link" style="text-align:left; padding:0.25rem 0.4rem; border-radius:6px; background:rgba(107,114,128,0.04); color:inherit; text-decoration:none; display:flex; align-items:flex-start; gap:1rem;">
+            {{- if $thumb }}<img src="{{ $thumb }}" alt="{{ $title }} thumbnail" class="shop-thumb" loading="lazy" />{{- end }}
+            <span class="shop-title">{{ $title }}</span>
+          </a>
+        {{- end }}
       </div>
     {{- end }}
   </div>
