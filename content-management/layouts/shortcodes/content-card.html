@@ -22,13 +22,11 @@
   {{- $page = site.GetPage $indexPath -}}
 {{- end -}}
 
-{{ if not $page }}
-  {{/* Page not found; render nothing */}}
-  {{ return }}
+{{ with $page }}
+  {{ $cardType := .Section | trim " \t\r\n" | replaceRE "\\s+" "" }}
+  {{ with $cardType }}
+    {{ $cardTypeSingular := . | lower | singularize }}
+    {{ $cardPartial := printf "%s-card.html" $cardTypeSingular }}
+    {{ partial $cardPartial $ }}
+  {{ end }}
 {{ end }}
-
-{{ $cardType := $page.Section }}
-{{ $cardTypeSingular := $cardType | lower | singularize }}
-{{ $cardPartial := printf "%s-card.html" $cardTypeSingular }}
-
-{{ partial $cardPartial $page }}
