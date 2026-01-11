@@ -23,10 +23,10 @@
 {{- end -}}
 
 {{ with $page }}
-  {{ $cardType := .Section | trim " \t\r\n" | replaceRE "\\s+" "" }}
+  {{ $cardType := .Section | default "" | strings.TrimSpace}}
   {{ with $cardType }}
     {{ $cardTypeSingular := . | lower | singularize }}
     {{ $cardPartial := printf "%s-card.html" $cardTypeSingular }}
-    {{ partial $cardPartial $ }}
+    {{ partial $cardPartial $page }}
   {{ end }}
 {{ end }}
