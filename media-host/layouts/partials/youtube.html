@@ -1,40 +1,59 @@
 {{- /*
   Partial: youtube.html
-  Expects to be called from a shortcode with `.` as the Page/shortcode context.
-  Behavior:
-  - Video ID lookup order: `.Get "id"` -> front matter `youtube_video_id` -> positional `.Get 0`.
-  - Supports optional params: width, height, class, title, loading, nocookie, start.
+  Accepts a dict context with keys: Page, id, pos0, width, height, class, title, loading, nocookie, start
+  Lookup order for id: index . "id" -> Page.Params.youtube_video_id -> index . "pos0"
 */ -}}
 
-{{- $id := default (.Get 0) (default .Page.Params.youtube_video_id (.Get "id")) -}}
+{{- $ctx := . -}}
+{{- $page := index $ctx "Page" -}}
+{{- $idIn := index $ctx "id" -}}
+{{- $pos0 := index $ctx "pos0" -}}
+{{- $youtubeParam := cond (ne $idIn "") $idIn (cond (and $page (ne $page.Params.youtube_video_id "")) $page.Params.youtube_video_id $pos0) -}}
 
-{{- if not $id -}}
-  {{- errorf "youtube partial: missing video id; provide as param 'id', first positional param, or set 'youtube_video_id' in front matter" -}}
-{{- end -}}
+{{- if not $youtubeParam -}}
+  {{- $pTitle := "unknown" -}}
+  {{- $pURL := "unknown" -}}
+  {{- if $page -}}
+    {{- if ne $page.Title "" -}}
+      {{- $pTitle = $page.Title -}}
+    {{- end -}}
+    {{- if ne $page.RelPermalink "" -}}
+      {{- $pURL = $page.RelPermalink -}}
+    {{- else if $page.File -}}
+      {{- $pURL = $page.File.Path -}}
+    {{- end -}}
+  {{- end -}}
+  <!-- youtube partial skipped: missing id. Page title={{ $pTitle }}, page_url={{ $pURL }} -->
+{{- else -}}
 
-{{- $width := or (.Get "width") "560" -}}
-{{- $height := or (.Get "height") "315" -}}
-{{- $class := .Get "class" -}}
-{{- $title := or (.Get "title") "YouTube video" -}}
-{{- $loading := .Get "loading" -}}
-{{- $nocookie := .Get "nocookie" -}}
-{{- $start := .Get "start" -}}
+{{- $width := or (index $ctx "width") "560" -}}
+{{- $height := or (index $ctx "height") "315" -}}
+{{- $class := index $ctx "class" -}}
+{{- $title := or (index $ctx "title") "YouTube video" -}}
+{{- $loading := index $ctx "loading" -}}
+{{- $nocookie := index $ctx "nocookie" -}}
+{{- $start := index $ctx "start" -}}
 
 {{- $host := "www.youtube.com" -}}
 {{- if $nocookie }}
   {{- $host = "www.youtube-nocookie.com" -}}
 {{- end -}}
 
-{{- $srcBase := printf "https://%s/embed/%s" $host $id -}}
+{{- $srcBase := printf "https://%s/embed/%s" $host $youtubeParam -}}
 
+{{- $lazy := index $ctx "lazy" -}}
+{{- $iframeSrc := cond (ne $start "") (printf "%s?start=%s" $srcBase $start) $srcBase -}}
+{{- $loadingParam := index $ctx "loading" -}}
+{{- $loadingAttr := cond (ne $loadingParam "") $loadingParam (cond $lazy "lazy" "") -}}
 <div{{ if $class }} class="{{ $class }}"{{ end }}>
   <iframe
-    src="{{ if $start }}{{ printf "%s?start=%s" $srcBase $start }}{{ else }}{{ $srcBase }}{{ end }}"
+    src="{{ $iframeSrc }}"
     width="{{ $width }}" height="{{ $height }}"
     title="{{ $title }}"
     frameborder="0"
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
     allowfullscreen
-    {{- if $loading }} loading="{{ $loading }}"{{ end -}}
+    {{- if ne $loadingAttr "" }} loading="{{ $loadingAttr }}"{{ end -}}
   ></iframe>
 </div>
+{{- end -}}

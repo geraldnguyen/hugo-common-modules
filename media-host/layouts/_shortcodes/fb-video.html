@@ -1,2 +1,11 @@
 {{/* Shortcode wrapper for fb-video partial. */}}
-{{ partial "fb-video.html" . }}
+{{ partial "fb-video.html" (dict
+	"Page" .Page
+	"id" (.Get "id")
+	"pos0" (.Get 0)
+	"width" (.Get "width")
+	"height" (.Get "height")
+	"class" (.Get "class")
+	"title" (.Get "title")
+	"loading" (.Get "loading")
+	) }}

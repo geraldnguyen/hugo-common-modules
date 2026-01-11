@@ -1,49 +1,63 @@
-<figure{{ with .Get "class" }} class="{{ . }}"{{ end }}>
-  {{- if .Get "link" -}}
-    <a href="{{ .Get "link" }}"{{ with .Get "target" }} target="{{ . }}"{{ end }}{{ with .Get "rel" }} rel="{{ . }}"{{ end }}>
-  {{- end -}}
+{{- /* figure partial expects a dict. Keys supported: Page, src, class, link, target, rel, alt, caption, width, height, loading, title, attr, attrlink */ -}}
+{{- $ctx := . -}}
+{{- $page := index $ctx "Page" -}}
+{{- $srcIn := index $ctx "src" -}}
+{{- $class := index $ctx "class" -}}
+{{- $link := index $ctx "link" -}}
+{{- $target := index $ctx "target" -}}
+{{- $rel := index $ctx "rel" -}}
+{{- $alt := index $ctx "alt" -}}
+{{- $caption := index $ctx "caption" -}}
+{{- $width := index $ctx "width" -}}
+{{- $height := index $ctx "height" -}}
+{{- $loading := index $ctx "loading" -}}
+{{- $title := index $ctx "title" -}}
+{{- $attr := index $ctx "attr" -}}
+{{- $attrlink := index $ctx "attrlink" -}}
 
-  {{- $u := urls.Parse (.Get "src") -}}
-  {{- $src := $u.String -}}
-  {{- if not $u.IsAbs -}}
-    {{- with or (.Page.Resources.Get $u.Path) (resources.Get $u.Path) -}}
-      {{- $src = .RelPermalink -}}
-    {{- end -}}
+{{- $u := urls.Parse $srcIn -}}
+{{- $src := $u.String -}}
+{{- if not $u.IsAbs -}}
+  {{- with and $page (or ($page.Resources.Get $u.Path) (resources.Get $u.Path)) -}}
+    {{- $src = .RelPermalink -}}
   {{- end -}}
+{{- end -}}
 
-  {{- $imgHost := (site.Params.image_host | default (replaceRE `/$` "" site.BaseURL)) -}}
-  {{- /* Force absolute host to configured image_host for absolute URLs */ -}}
-  {{- $src = $src | replaceRE "^https?://[^/]+" $imgHost -}}
-  {{- /* If $src is still not absolute, prefix with CDN host (ensure one leading slash) */ -}}
-  {{- if not (findRE `^https?://` $src) -}}
-    {{- if findRE `^/` $src -}}
-      {{- $src = printf "%s%s" $imgHost $src -}}
-    {{- else -}}
-      {{- $src = printf "%s/%s" $imgHost $src -}}
-    {{- end -}}
+{{- $imgHost := (site.Params.image_host | default (replaceRE `/$` "" site.BaseURL)) -}}
+{{- $src = $src | replaceRE "^https?://[^/]+" $imgHost -}}
+{{- if not (findRE `^https?://` $src) -}}
+  {{- if findRE `^/` $src -}}
+    {{- $src = printf "%s%s" $imgHost $src -}}
+  {{- else -}}
+    {{- $src = printf "%s/%s" $imgHost $src -}}
+  {{- end -}}
+{{- end -}}
+
+<figure{{ with $class }} class="{{ . }}"{{ end }}>
+  {{- if $link -}}
+    <a href="{{ $link }}"{{ with $target }} target="{{ . }}"{{ end }}{{ with $rel }} rel="{{ . }}"{{ end }}>
   {{- end -}}
 
   <img src="{{ $src }}"
-    {{- if or (.Get "alt") (.Get "caption") }}
-    alt="{{ with .Get "alt" }}{{ . }}{{ else }}{{ .Get "caption" | markdownify| plainify }}{{ end }}"
+    {{- if or $alt $caption }}
+    alt="{{ with $alt }}{{ . }}{{ else }}{{ $caption | markdownify | plainify }}{{ end }}"
     {{- end -}}
-    {{- with .Get "width" }} width="{{ . }}"{{ end -}}
-    {{- with .Get "height" }} height="{{ . }}"{{ end -}}
-    {{- with .Get "loading" }} loading="{{ . }}"{{ end -}}
+    {{- with $width }} width="{{ . }}"{{ end -}}
+    {{- with $height }} height="{{ . }}"{{ end -}}
+    {{- with $loading }} loading="{{ . }}"{{ end -}}
   ><!-- Closing img tag -->
-  {{- if .Get "link" }}</a>{{ end -}}
-  {{- if or (or (.Get "title") (.Get "caption")) (.Get "attr") -}}
+
+  {{- if $link }}</a>{{ end -}}
+  {{- if or (or $title $caption) $attr -}}
     <figcaption>
-      {{ with (.Get "title") -}}
+      {{- with $title }}
         <h4>{{ . }}</h4>
       {{- end -}}
-      {{- if or (.Get "caption") (.Get "attr") -}}<p>
-        {{- .Get "caption" | markdownify -}}
-        {{- with .Get "attrlink" }}
-          <a href="{{ . }}">
-        {{- end -}}
-        {{- .Get "attr" | markdownify -}}
-        {{- if .Get "attrlink" }}</a>{{ end }}</p>
+      {{- if or $caption $attr -}}<p>
+        {{- $caption | markdownify -}}
+        {{- with $attrlink }}<a href="{{ . }}">{{ end -}}
+        {{- $attr | markdownify -}}
+        {{- with $attrlink }}</a>{{ end }}</p>
       {{- end }}
     </figcaption>
   {{- end }}

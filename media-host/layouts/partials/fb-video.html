@@ -1,31 +1,49 @@
 {{- /*
   Partial: fb-video.html
-  Expects shortcode context `.` when called.
-  Video ID lookup order: `.Get "id"` -> front matter `facebook_video_id` -> positional `.Get 0`.
-  If the resolved value looks like a URL (starts with http), it's used as the video href.
-  Otherwise the partial builds a Facebook video URL using `video.php?v={id}`.
+  Accepts a dict context with keys: Page, id, pos0, width, height, class, title, loading
+  Lookup for id: index . "id" -> Page.Params.facebook_video_id -> index . "pos0"
 */ -}}
 
-{{- $id := default (.Get 0) (default .Page.Params.facebook_video_id (.Get "id")) -}}
+{{- $ctx := . -}}
+{{- $page := index $ctx "Page" -}}
+{{- $idIn := index $ctx "id" -}}
+{{- $pos0 := index $ctx "pos0" -}}
+{{- $fbID := cond (ne $idIn "") $idIn (cond (and $page (ne $page.Params.facebook_video_id "")) $page.Params.facebook_video_id $pos0) -}}
 
-{{- if not $id -}}
-  {{- errorf "fb-video partial: missing video id; provide as param 'id', first positional param, or set 'facebook_video_id' in front matter" -}}
-{{- end -}}
-
-{{- $width := or (.Get "width") "560" -}}
-{{- $height := or (.Get "height") "315" -}}
-{{- $class := .Get "class" -}}
-{{- $title := or (.Get "title") "Facebook video" -}}
-{{- $loading := .Get "loading" -}}
-{{- $href := "" -}}
-{{- if findRE `^https?://` $id -}}
-  {{- $href = $id -}}
+{{- if not $fbID -}}
+  {{- $pTitle := "unknown" -}}
+  {{- $pURL := "unknown" -}}
+  {{- if $page -}}
+    {{- if ne $page.Title "" -}}
+      {{- $pTitle = $page.Title -}}
+    {{- end -}}
+    {{- if ne $page.RelPermalink "" -}}
+      {{- $pURL = $page.RelPermalink -}}
+    {{- else if $page.File -}}
+      {{- $pURL = $page.File.Path -}}
+    {{- end -}}
+  {{- end -}}
+  <!-- fb-video partial skipped: missing id. Page title={{ $pTitle }}, page_url={{ $pURL }} -->
 {{- else -}}
-  {{- $href = printf "https://www.facebook.com/video.php?v=%v" $id -}}
+
+{{- $width := or (index $ctx "width") "560" -}}
+{{- $height := or (index $ctx "height") "315" -}}
+{{- $class := index $ctx "class" -}}
+{{- $title := or (index $ctx "title") "Facebook video" -}}
+{{- $loading := index $ctx "loading" -}}
+
+{{- $href := "" -}}
+{{- if findRE `^https?://` $fbID -}}
+  {{- $href = $fbID -}}
+{{- else -}}
+  {{- $href = printf "https://www.facebook.com/video.php?v=%v" $fbID -}}
 {{- end -}}
 
 {{- $src := printf "https://www.facebook.com/plugins/video.php?href=%s&show_text=0&width=%s" (urlquery $href) $width -}}
 
+{{- $lazy := index $ctx "lazy" -}}
+{{- $loadingParam := index $ctx "loading" -}}
+{{- $loadingAttr := cond (ne $loadingParam "") $loadingParam (cond $lazy "lazy" "") -}}
 <div{{ if $class }} class="{{ $class }}"{{ end }}>
   <iframe
     src="{{ $src }}"
@@ -36,6 +54,8 @@
     frameborder="0"
     allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"
     allowfullscreen
-    {{- if $loading }} loading="{{ $loading }}"{{ end -}}
+    {{- if ne $loadingAttr "" }} loading="{{ $loadingAttr }}"{{ end -}}
   ></iframe>
 </div>
+{{- end -}}
+

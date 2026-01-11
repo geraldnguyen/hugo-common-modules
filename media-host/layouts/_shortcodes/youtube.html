@@ -1,2 +1,13 @@
-{{/* Shortcode wrapper for youtube partial. Passes the shortcode context to the partial. */}}
-{{ partial "youtube.html" . }}
+{{/* Shortcode wrapper for youtube partial. */}}
+{{ partial "youtube.html" (dict
+	"Page" .Page
+	"id" (.Get "id")
+	"pos0" (.Get 0)
+	"width" (.Get "width")
+	"height" (.Get "height")
+	"class" (.Get "class")
+	"title" (.Get "title")
+	"loading" (.Get "loading")
+	"nocookie" (.Get "nocookie")
+	"start" (.Get "start")
+	) }}

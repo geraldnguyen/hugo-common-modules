@@ -1,1 +1,17 @@
-{{ partial "figure.html" . }}
+{{ partial "figure.html" (dict 
+	"Page" .Page 
+	"src" (.Get "src") 
+	"class" (.Get "class") 
+	"link" (.Get "link") 
+	"target" (.Get "target") 
+	"rel" (.Get "rel") 
+	"alt" (.Get "alt") 
+	"caption" (.Get "caption") 
+	"width" (.Get "width") 
+	"height" (.Get "height") 
+	"loading" (.Get "loading") 
+	"title" (.Get "title") 
+	"attr" (.Get "attr") 
+	"attrlink" (.Get "attrlink") 
+	"pos0" (.Get 0) 
+	) }}
