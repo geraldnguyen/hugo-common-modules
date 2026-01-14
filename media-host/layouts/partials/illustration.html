@@ -16,8 +16,6 @@
 {{- $page := . -}}
 {{- $params := site.Params -}}
 
-{{- $hasYou := and (ne (index $page "Page") nil) (ne $page.Page.Params.youtube_video_id "") -}}
-{{- $hasFB  := and (ne (index $page "Page") nil) (ne $page.Page.Params.facebook_video_id "") -}}
 
 {{- /* Fallback-safe access to page params when called from templates */ -}}
 {{- $youtubeID := "" -}}
@@ -27,11 +25,20 @@
   {{- $facebookID = $page.Page.Params.facebook_video_id -}}
 {{- end -}}
 
+{{- /* Normalize YouTube ID and treat common 'not available' markers (N/A, NA, none) as empty */ -}}
+{{- $badYou := slice "" "n/a" "na" "n a" "n.a." "not applicable" "not available" "none" "null" -}}
+{{- $youtubeIDClean := lower (trim $youtubeID) -}}
+{{- $showYoutube := and (ne $youtubeID "") (not (in $badYou $youtubeIDClean)) -}}
+
+{{- /* Normalize Facebook ID similarly and compute showFacebook flag */ -}}
+{{- $facebookIDClean := lower (trim $facebookID) -}}
+{{- $showFacebook := and (ne $facebookID "") (not (in $badYou $facebookIDClean)) -}}
+
 {{- $available := slice "image" -}}
-{{- if $youtubeID }}
+{{- if $showYoutube }}
   {{- $available = $available | append "youtube" -}}
 {{- end -}}
-{{- if $facebookID }}
+{{- if $showFacebook }}
   {{- $available = $available | append "facebook" -}}
 {{- end -}}
 {{- /* Add Amazon tab when page has shop_links */ -}}
@@ -62,8 +69,8 @@
 
   <div class="tabs" role="tablist">
     <button type="button" class="tab-btn" data-tab="image">Image</button>
-    {{- if $youtubeID }}<button type="button" class="tab-btn" data-tab="youtube">YouTube</button>{{- end }}
-    {{- if $facebookID }}<button type="button" class="tab-btn" data-tab="facebook">Facebook Reel</button>{{- end }}
+    {{- if $showYoutube }}<button type="button" class="tab-btn" data-tab="youtube">YouTube</button>{{- end }}
+    {{- if $showFacebook }}<button type="button" class="tab-btn" data-tab="facebook">Facebook Reel</button>{{- end }}
     {{- if and (ne $shopLinks nil) (gt (len $shopLinks) 0) }}<button type="button" class="tab-btn" data-tab="amazon">Amazon</button>{{- end }}
   </div>
 
@@ -76,13 +83,13 @@
       {{ partial "figure.html" (dict "Page" $page.Page "src" $imgSrc "class" "illustration-image") }}
     </div>
 
-    {{- if $youtubeID }}
+    {{- if $showYoutube }}
       <div class="panel panel-youtube" data-panel="youtube">
           {{ partial "youtube.html" (dict "Page" $page.Page "id" $youtubeID "width" "560" "height" "315" "lazy" true) }}
       </div>
     {{- end }}
 
-    {{- if $facebookID }}
+    {{- if $showFacebook }}
       <div class="panel panel-facebook" data-panel="facebook">
         {{ partial "fb-video.html" (dict "Page" $page.Page "id" $facebookID "width" "560" "height" "315" "lazy" true) }}
       </div>
