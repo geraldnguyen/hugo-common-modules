@@ -27,11 +27,11 @@
 
 {{- /* Normalize YouTube ID and treat common 'not available' markers (N/A, NA, none) as empty */ -}}
 {{- $badYou := slice "" "n/a" "na" "n a" "n.a." "not applicable" "not available" "none" "null" -}}
-{{- $youtubeIDClean := lower (trim $youtubeID) -}}
+{{- $youtubeIDClean := lower (strings.TrimSpace $youtubeID) -}}
 {{- $showYoutube := and (ne $youtubeID "") (not (in $badYou $youtubeIDClean)) -}}
 
 {{- /* Normalize Facebook ID similarly and compute showFacebook flag */ -}}
-{{- $facebookIDClean := lower (trim $facebookID) -}}
+{{- $facebookIDClean := lower (strings.TrimSpace $facebookID) -}}
 {{- $showFacebook := and (ne $facebookID "") (not (in $badYou $facebookIDClean)) -}}
 
 {{- $available := slice "image" -}}
