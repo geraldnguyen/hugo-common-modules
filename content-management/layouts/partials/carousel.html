@@ -1,28 +1,24 @@
 {{/*
   carousel.html
 
-  Params (dict):
-    - Title: string (heading text)
-    - Card: string (singular card name, e.g. "story")
-    - Items: sequence of page objects to render
+    Params (dict):
+        - Title: string (heading text)
+        - Items: sequence of page objects to render
 
-  This partial pluralizes Card (basic rule) and replaces occurrences of
-  "stories" in classnames/headings with the pluralized card name.
+    This partial resolves card partials per item by using the item's Section.
 */}}
 {{ $title := .Title | default "Items" }}
-{{ $card := .Card | default "story" }}
 {{ $cardCssClass := .CardCssClass | default "" }}
 {{ $items := .Items }}
 {{ if not $items }}{{ return }}{{ end }}
 
-{{/* basic pluralization: if word ends with consonant+y -> replace y->ies, else add 's' */}}
-{{ $last := substr $card (sub (len $card) 1) }}
-{{ $vowels := "aeiou" }}
-{{ $cardPlural := cond (and (eq $last "y") (not (in $vowels (lower $last)))) (printf "%sies" (substr $card 0 (sub (len $card) 1))) (printf "%ss" $card) }}
+{{ $itemLabel := "item" }}
+{{ $itemLabelPlural := "items" }}
 
 {{/* wrapper class and ids */}}
-{{ $wrapperClass := printf "%s-carousel-container" $cardPlural }}
-{{ $trackId := printf "carousel-track-%s" $cardPlural }}
+{{ $idBase := printf "carousel-%s" ($title | urlize) }}
+{{ $wrapperClass := printf "%s-wrapper" $idBase }}
+{{ $trackId := printf "%s-track" $idBase }}
 
 <script>
   
@@ -31,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initFeaturedCarousel();
 });
 
-// Featured Stories Carousel
+// Featured Carousel
 function initFeaturedCarousel() {
     console.log('Initializing carousel...'); // Debug log
   const carousel = document.querySelector('.{{ $wrapperClass }}');
@@ -186,18 +182,11 @@ function initFeaturedCarousel() {
     opacity: 0.7;
     transition: opacity 0.5s ease-in-out;
     padding: 2rem;
+    color: black;
 }
 
 .carousel-slide.active {
     opacity: 1;
-}
-
-.carousel-slide .story-card {
-    margin: 0;
-    background: transparent;
-    box-shadow: none;
-    border: none;
-    padding: 0;
 }
 
 .carousel-btn {
@@ -299,7 +288,7 @@ function initFeaturedCarousel() {
 
 <div class="{{ $wrapperClass }}">
   <h3>{{ $title }}</h3>
-  <div class="{{ $cardPlural }}-carousel">
+    <div class="carousel">
     <div class="carousel-container">
       <div class="carousel-track" id="{{ $trackId }}">
         {{ range $index, $item := $items }}
@@ -307,18 +296,25 @@ function initFeaturedCarousel() {
           {{- if eq $index 0 -}}
             {{- $cssClass = printf "%s active" $cssClass -}}
           {{- end -}}
-          {{ partial (printf "%s-card.html" $card) (dict "Page" $item "cssClass" $cssClass) }}
+                    {{- $cardType := $item.Section | default "" | strings.TrimSpace -}}
+                    {{- with $cardType -}}
+                        {{- $cardTypeSingular := . | lower | singularize -}}
+                        {{- $cardPartial := printf "%s-card.html" $cardTypeSingular -}}
+                        {{- if templates.Exists (printf "partials/%s" $cardPartial) -}}
+                                {{- partial $cardPartial (dict "Page" $item "cssClass" $cssClass) -}}
+                            {{- end -}}
+                    {{- end -}}
         {{ end }}
       </div>
       {{ if gt (len $items) 1 }}
-        <button class="carousel-btn carousel-prev" aria-label="Previous {{ $cardPlural }}">‹</button>
-        <button class="carousel-btn carousel-next" aria-label="Next {{ $cardPlural }}">›</button>
+                <button class="carousel-btn carousel-prev" aria-label="Previous {{ $itemLabelPlural }}">‹</button>
+                <button class="carousel-btn carousel-next" aria-label="Next {{ $itemLabelPlural }}">›</button>
       {{ end }}
     </div>
     {{ if gt (len $items) 1 }}
       <div class="carousel-indicators">
         {{ range $index, $item := $items }}
-          <button class="indicator {{ if eq $index 0 }}active{{ end }}" data-slide="{{ $index }}" aria-label="Go to {{ $card }} {{ add $index 1 }}"></button>
+                    <button class="indicator {{ if eq $index 0 }}active{{ end }}" data-slide="{{ $index }}" aria-label="Go to {{ $itemLabel }} {{ add $index 1 }}"></button>
         {{ end }}
       </div>
     {{ end }}
