@@ -12,7 +12,11 @@
 
 <!-- Get recently featured pages (featured=true within 1 month) -->
 {{ range $featured }}
-  {{ $featuredDate := .Params.featured_date | default .Date }}
+  {{ $featuredDate := .Date }}
+  {{ with .Params.featured_date }}
+    {{ $featuredDate = time . }}
+  {{ end }}
+
   {{ if ge $featuredDate $oneMonthAgo }}
     {{ $featuredRecent = $featuredRecent | append . }}
   {{ end }}
