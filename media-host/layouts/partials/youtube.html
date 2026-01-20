@@ -62,14 +62,20 @@
 {{- $loadingParam := index $ctx "loading" -}}
 {{- $loadingAttr := cond (ne $loadingParam "") $loadingParam (cond $lazy "lazy" "") -}}
 <div{{ if $class }} class="{{ $class }}"{{ end }}>
-  <iframe
-    src="{{ $iframeSrc }}"
-    width="{{ $width }}" height="{{ $height }}"
-    title="{{ $title }}"
-    frameborder="0"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-    allowfullscreen
-    {{- if ne $loadingAttr "" }} loading="{{ $loadingAttr }}"{{ end -}}
-  ></iframe>
+  <div class="yt-responsive">
+    <iframe
+      src="{{ $iframeSrc }}"
+      width="{{ $width }}" height="{{ $height }}"
+      title="{{ $title }}"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen
+      {{- if ne $loadingAttr "" }} loading="{{ $loadingAttr }}"{{ end -}}
+    ></iframe>
+  </div>
 </div>
+<style>
+  .yt-responsive{position:relative;width:100%;padding-bottom:56.25%;height:0;overflow:hidden}
+  .yt-responsive iframe{position:absolute;top:0;left:0;width:100%;height:100%}
+</style>
 {{- end -}}
