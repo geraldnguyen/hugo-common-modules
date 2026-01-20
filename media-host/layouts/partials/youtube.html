@@ -8,7 +8,17 @@
 {{- $page := index $ctx "Page" -}}
 {{- $idIn := index $ctx "id" -}}
 {{- $pos0 := index $ctx "pos0" -}}
-{{- $youtubeParam := cond (ne $idIn "") $idIn (cond (and $page (ne $page.Params.youtube_video_id "")) $page.Params.youtube_video_id $pos0) -}}
+{{- $youtubeID := cond (ne $idIn "") $idIn (cond (and $page (ne $page.Params.youtube_video_id "")) $page.Params.youtube_video_id $pos0) -}}
+{{- $playlistID := "" -}}
+{{- if and $page (ne $page.Params.youtube_playlist_id "") -}}
+  {{- $playlistID = $page.Params.youtube_playlist_id -}}
+{{- end -}}
+{{- $cardTypeSingular := "" -}}
+{{- if and $page (ne $page.Section "") -}}
+  {{- $cardTypeSingular = $page.Section | strings.TrimSpace | lower | singularize -}}
+{{- end -}}
+{{- $usePlaylist := and (eq $cardTypeSingular "collection") (ne $playlistID "") -}}
+{{- $youtubeParam := cond $usePlaylist $playlistID $youtubeID -}}
 
 {{- if not $youtubeParam -}}
   {{- $pTitle := "unknown" -}}
@@ -39,10 +49,10 @@
   {{- $host = "www.youtube-nocookie.com" -}}
 {{- end -}}
 
-{{- $srcBase := printf "https://%s/embed/%s" $host $youtubeParam -}}
+{{- $srcBase := cond $usePlaylist (printf "https://%s/embed/videoseries?list=%s" $host $youtubeParam) (printf "https://%s/embed/%s" $host $youtubeParam) -}}
 
 {{- $lazy := index $ctx "lazy" -}}
-{{- $iframeSrc := cond (ne $start "") (printf "%s?start=%s" $srcBase $start) $srcBase -}}
+{{- $iframeSrc := cond (ne $start "") (cond $usePlaylist (printf "%s&start=%s" $srcBase $start) (printf "%s?start=%s" $srcBase $start)) $srcBase -}}
 {{- $loadingParam := index $ctx "loading" -}}
 {{- $loadingAttr := cond (ne $loadingParam "") $loadingParam (cond $lazy "lazy" "") -}}
 <div{{ if $class }} class="{{ $class }}"{{ end }}>

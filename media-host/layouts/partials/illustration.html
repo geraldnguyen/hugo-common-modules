@@ -19,16 +19,23 @@
 
 {{- /* Fallback-safe access to page params when called from templates */ -}}
 {{- $youtubeID := "" -}}
+{{- $youtubePlaylistID := "" -}}
 {{- $facebookID := "" -}}
 {{- if ne (index $page "Page") nil -}}
   {{- $youtubeID = $page.Page.Params.youtube_video_id -}}
+  {{- $youtubePlaylistID = $page.Page.Params.youtube_playlist_id -}}
   {{- $facebookID = $page.Page.Params.facebook_video_id -}}
 {{- end -}}
 
 {{- /* Normalize YouTube ID and treat common 'not available' markers (N/A, NA, none) as empty */ -}}
 {{- $badYou := slice "" "n/a" "na" "n a" "n.a." "not applicable" "not available" "none" "null" -}}
 {{- $youtubeIDClean := lower (strings.TrimSpace $youtubeID) -}}
-{{- $showYoutube := and (ne $youtubeID "") (not (in $badYou $youtubeIDClean)) -}}
+{{- $youtubePlaylistIDClean := lower (strings.TrimSpace $youtubePlaylistID) -}}
+{{- $isCollectionCard := false -}}
+{{- if and (ne (index $page "Page") nil) (ne $page.Page.Section "") -}}
+  {{- $isCollectionCard = eq ($page.Page.Section | strings.TrimSpace | lower | singularize) "collection" -}}
+{{- end -}}
+{{- $showYoutube := or (and (ne $youtubeID "") (not (in $badYou $youtubeIDClean))) (and $isCollectionCard (ne $youtubePlaylistID "") (not (in $badYou $youtubePlaylistIDClean))) -}}
 
 {{- /* Normalize Facebook ID similarly and compute showFacebook flag */ -}}
 {{- $facebookIDClean := lower (strings.TrimSpace $facebookID) -}}
