@@ -13,12 +13,18 @@
 {{- if and $page (ne $page.Params.youtube_playlist_id "") -}}
   {{- $playlistID = $page.Params.youtube_playlist_id -}}
 {{- end -}}
+{{- $publishAt := "" -}}
+{{- $publishOk := true -}}
+{{- if and $page (ne $page.Params.youtube_publish_at "") -}}
+  {{- $publishAt = $page.Params.youtube_publish_at -}}
+  {{- $publishOk = le (time $publishAt) now -}}
+{{- end -}}
 {{- $cardTypeSingular := "" -}}
 {{- if and $page (ne $page.Section "") -}}
   {{- $cardTypeSingular = $page.Section | strings.TrimSpace | lower | singularize -}}
 {{- end -}}
-{{- $usePlaylist := and (eq $cardTypeSingular "collection") (ne $playlistID "") -}}
-{{- $youtubeParam := cond $usePlaylist $playlistID $youtubeID -}}
+{{- $usePlaylist := and $publishOk (eq $cardTypeSingular "collection") (ne $playlistID "") -}}
+{{- $youtubeParam := cond $publishOk (cond $usePlaylist $playlistID $youtubeID) "" -}}
 
 {{- if not $youtubeParam -}}
   {{- $pTitle := "unknown" -}}
