@@ -16,8 +16,10 @@
 {{- $publishAt := "" -}}
 {{- $publishOk := true -}}
 {{- if and $page (ne $page.Params.youtube_publish_at "") -}}
-  {{- $publishAt = $page.Params.youtube_publish_at -}}
-  {{- $publishOk = le (time $publishAt) now -}}
+  {{- $publishAt = $page.Params.youtube_publish_at | default "" -}}
+  {{- if ne $publishAt "" -}}
+    {{- $publishOk = le (time $publishAt) now -}}
+  {{- end -}}
 {{- end -}}
 {{- $cardTypeSingular := "" -}}
 {{- if and $page (ne $page.Section "") -}}
