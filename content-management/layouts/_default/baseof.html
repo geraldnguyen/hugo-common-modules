@@ -169,7 +169,7 @@
 
     <footer class="site-footer">
         <div class="footer-container">
-            <p>&copy; {{ now.Year }} {{ .Site.Title }}. {{ .Site.Params.Description}}.</p>
+            <p>{{ with .Site.Params.CopyrightFooter }}{{ . }}{{ else }}&copy; {{ now.Year }} {{ .Site.Title }}. {{ .Site.Params.Description}}.{{ end }}</p>
             <div class="footer-links">
                 {{- range .Site.Menus.footer -}}
                     <a href="{{ .URL }}" class="footer-link {{ if $.IsMenuCurrent "footer" . }}active{{ end }}">{{ .Name }}</a>
