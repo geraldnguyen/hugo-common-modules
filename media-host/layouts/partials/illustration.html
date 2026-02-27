@@ -86,7 +86,9 @@
     <button type="button" class="tab-btn" data-tab="image">Image</button>
     {{- if $showYoutube }}<button type="button" class="tab-btn" data-tab="youtube">YouTube</button>{{- end }}
     {{- if $showFacebook }}<button type="button" class="tab-btn" data-tab="facebook">Facebook Reel</button>{{- end }}
-    {{- if and (ne $shopLinks nil) (gt (len $shopLinks) 0) }}<button type="button" class="tab-btn" data-tab="amazon">Amazon</button>{{- end }}
+    {{- if and (ne $shopLinks nil) (gt (len $shopLinks) 0) }}<button type="button" class="tab-btn" data-tab="amazon" style="background:#eee;">
+      <span class="material-icons" aria-hidden="true">shopping_cart</span>
+    </button>{{- end }}
   </div>
 
   <div class="panels">
@@ -118,7 +120,22 @@
           {{- $thumb := .thumbnail | default .thumbmail | default .image | default "" -}}
           <a href="{{ $link }}" target="_blank" rel="noopener noreferrer" class="shop-link" style="text-align:left; padding:0.25rem 0.4rem; border-radius:6px; background:rgba(107,114,128,0.04); color:inherit; text-decoration:none; display:flex; align-items:flex-start; gap:1rem;">
             {{- if $thumb }}<img src="{{ $thumb }}" alt="{{ $title }} thumbnail" class="shop-thumb" loading="lazy" />{{- end }}
-            <span class="shop-title">{{ $title }}</span>
+            <div class="shop-info" style="display:flex;flex-direction:column;">
+              <span class="shop-title" style="font-weight:bold;">
+                {{ $title }}
+              </span>
+              {{- with .release_date }}
+                <span class="shop-release" style="font-size:0.9em;color:#555;">Release Date: {{ . }}</span>
+              {{- end }}
+              {{- if or .kindle .paperback .hardcover }}
+                <span class="shop-formats" style="font-size:0.9em;color:#555;">
+                  Formats:
+                  {{- if .kindle }}<span class="material-icons format-icon kindle" title="Kindle">tablet_mac</span>{{- end }}
+                  {{- if .paperback }}<span class="material-icons format-icon paperback" title="Paperback">menu_book</span>{{- end }}
+                  {{- if .hardcover }}<span class="material-icons format-icon hardcover" title="Hardcover">library_books</span>{{- end }}
+                </span>
+              {{- end }}
+            </div>
           </a>
         {{- end }}
       </div>
