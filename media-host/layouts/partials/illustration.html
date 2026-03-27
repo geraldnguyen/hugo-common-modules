@@ -79,7 +79,9 @@
     .illustration-tabs .tabs button.active{background:#fff;border-bottom:2px solid #000}
     .illustration-tabs .panel{display:none}
     .illustration-tabs .panel.active{display:block}
-    .illustration-tabs img{max-width:100%;height:auto;display:block}
+    .illustration-tabs img{max-width:100%;height:auto;display:block; }
+    .illustration-tabs .shop-link{text-align:left;padding:0.25rem 0.4rem;border-radius:6px;background:rgba(107,114,128,0.04);color:inherit;text-decoration:none;display:flex;align-items:flex-start;gap:1rem; justify-content: flex-start;}
+    .illustration-tabs .shop-info{display:flex;flex-direction:column; flex-grow: 3;}
   </style>
 
   <div class="tabs" role="tablist">
@@ -118,9 +120,9 @@
           {{- $title := .title | default .Title | default "Shop" -}}
           {{- $link := .link | default .url | default "#" -}}
           {{- $thumb := .thumbnail | default .thumbmail | default .image | default "" -}}
-          <a href="{{ $link }}" target="_blank" rel="noopener noreferrer" class="shop-link" style="text-align:left; padding:0.25rem 0.4rem; border-radius:6px; background:rgba(107,114,128,0.04); color:inherit; text-decoration:none; display:flex; align-items:flex-start; gap:1rem;">
+          <a href="{{ $link }}" target="_blank" rel="noopener noreferrer" class="shop-link">
             {{- if $thumb }}<img src="{{ $thumb }}" alt="{{ $title }} thumbnail" class="shop-thumb" loading="lazy" />{{- end }}
-            <div class="shop-info" style="display:flex;flex-direction:column;">
+            <div class="shop-info">
               <span class="shop-title" style="font-weight:bold;">
                 {{ $title }}
               </span>
