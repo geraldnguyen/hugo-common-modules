@@ -17,7 +17,7 @@
     {{ $featuredDate = time . }}
   {{ end }}
 
-  {{ if ge $featuredDate $oneMonthAgo }}
+  {{ if and (ge $featuredDate $oneMonthAgo) (le $featuredDate $now) }}
     {{ $featuredRecent = $featuredRecent | append . }}
   {{ end }}
 {{ end }}
