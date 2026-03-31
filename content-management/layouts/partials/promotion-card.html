@@ -1,0 +1,43 @@
+{{ $page := . }}
+{{ $cssClass := "" }}
+
+{{ if reflect.IsMap . }}
+    {{ with index . "Page" }}{{ $page = . }}{{ end }}
+    {{ with index . "page" }}{{ $page = . }}{{ end }}
+    {{ with index . "cssClass" }}{{ $cssClass = . }}{{ end }}
+    {{ with index . "CssClass" }}{{ $cssClass = . }}{{ end }}
+    {{ with index . "Cssclass" }}{{ $cssClass = . }}{{ end }}
+{{ end }}
+
+<div class="collection-card{{ if $cssClass }} {{ $cssClass }}{{ end }}"
+     data-title="{{ $page.Title | lower }}"
+     data-series="{{ with $page.Params.series }}{{ . | lower }}{{ end }}"
+>
+    <h3><a href="{{ $page.Permalink }}">{{ $page.Title }}</a></h3>
+
+    {{ with $page.Params.subtitle }}
+    <p class="subtitle">{{ . }}</p>
+    {{ end }}
+
+    <div class="collection-summary">
+        {{ partial "figure.html" (dict "Page" $page  "src" "illustration.webp" "alt" (printf "Illustration for %s" $page.Title) ) }}
+
+        {{ if $page.Params.description }}
+            <p>{{ $page.Params.description }}</p>
+        {{ else if $page.Summary }}
+            <p>{{ $page.Summary }}</p>
+        {{ else }}
+            <p>{{ $page.Plain | truncate 220 }}</p>
+        {{ end }}
+    </div>
+
+    {{ with $page.Params.action }}
+    <a href="{{ $page.Params.action_link }}" class="action-link" target="_blank">
+      {{ . }}
+      <span class="open-in-new" aria-hidden="true">↗</span>
+    </a>
+    {{ end}}
+
+    <a href="{{ $page.Permalink }}" class="read-more">View Promotion →</a>
+
+</div>
