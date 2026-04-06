@@ -528,6 +528,7 @@
                         throw new Error('No title/link records extracted using configured JSONPath.');
                     }
                 } catch(_e){
+                    console.error('Search suggest: failed to fetch or process data API, falling back to DOM extraction.', _e);
                     const fallbackRecords = getFallbackRecordsFromDOM();
                     if(!buildSearchIndexFromRecords(fallbackRecords)){
                         // Keep the basic search UI available even if suggestions fail.
