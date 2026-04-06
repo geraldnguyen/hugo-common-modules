@@ -342,7 +342,6 @@
     <script src="{{ "js/main.js" | absURL }}"></script>
     <script src="{{ "js/base.js" | absURL }}"></script>
     {{- if and .Site.Params.data_api .Site.Params.data_api_title .Site.Params.data_api_link -}}
-    <script src="{{ "js/vendor/fuse.basic.min.js" | absURL }}"></script>
     <script src="{{ "js/vendor/jsonpath.min.js" | absURL }}"></script>
     {{- end -}}
 
@@ -355,15 +354,14 @@
             const toggle = searchIcon.querySelector('.search-toggle');
             const panel = searchIcon.querySelector('.search-panel');
             const input = searchIcon.querySelector('.search-input');
-            const form = searchIcon.querySelector('.search-form');
             const suggestions = searchIcon.querySelector('.search-suggestions');
             const searchData = searchIcon.querySelector('.search-data');
-            if(!toggle || !panel || !input || !form || !suggestions || !searchData) return;
+            if(!toggle || !panel || !input || !suggestions || !searchData) return;
 
             const dataApi = searchData.dataset.api;
             const dataApiTitlePath = searchData.dataset.apiTitle;
             const dataApiLinkPath = searchData.dataset.apiLink;
-            let fuse = null;
+            let searchIndex = [];
 
             function escapeHtml(value){
                 return value
@@ -392,16 +390,19 @@
 
             function refreshSuggestionsFromInput(){
                 const query = input.value.trim();
-                if(query.length < 3 || !fuse){
+                if(query.length < 3 || searchIndex.length === 0){
                     hideSuggestions();
                     return;
                 }
 
-                const results = fuse.search(query, { limit: 5 });
+                const queryLower = query.toLowerCase();
+                const results = searchIndex
+                    .filter(item => item.title.toLowerCase().includes(queryLower))
+                    .slice(0, 5);
                 renderSuggestions(results);
             }
 
-            function buildFuseFromRecords(rawRecords){
+            function buildSearchIndexFromRecords(rawRecords){
                 const seen = new Set();
                 const records = (Array.isArray(rawRecords) ? rawRecords : [])
                     .filter(item => item && typeof item.title === 'string' && typeof item.link === 'string')
@@ -421,14 +422,7 @@
                     return false;
                 }
 
-                fuse = new window.Fuse(records, {
-                    keys: ['title'],
-                    threshold: 0.35,
-                    ignoreLocation: true,
-                    includeMatches: true,
-                    minMatchCharLength: 1
-                });
-
+                searchIndex = records;
                 refreshSuggestionsFromInput();
                 return true;
             }
@@ -444,31 +438,19 @@
                     });
             }
 
-            function highlightMatches(title, indices){
-                if(!indices || indices.length === 0) return escapeHtml(title);
+            function highlightMatches(title, query){
+                const titleLower = title.toLowerCase();
+                const queryLower = query.toLowerCase();
+                const matchIndex = titleLower.indexOf(queryLower);
 
-                const sorted = indices
-                    .map(pair => [Math.max(0, pair[0]), Math.min(title.length - 1, pair[1])])
-                    .sort((a, b) => a[0] - b[0]);
+                if(matchIndex < 0){
+                    return escapeHtml(title);
+                }
 
-                const merged = [];
-                sorted.forEach(pair => {
-                    if(merged.length === 0 || pair[0] > merged[merged.length - 1][1] + 1){
-                        merged.push([pair[0], pair[1]]);
-                    } else {
-                        merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], pair[1]);
-                    }
-                });
-
-                let cursor = 0;
-                let output = '';
-                merged.forEach(pair => {
-                    output += escapeHtml(title.slice(cursor, pair[0]));
-                    output += '<strong>' + escapeHtml(title.slice(pair[0], pair[1] + 1)) + '</strong>';
-                    cursor = pair[1] + 1;
-                });
-                output += escapeHtml(title.slice(cursor));
-                return output;
+                const before = escapeHtml(title.slice(0, matchIndex));
+                const match = escapeHtml(title.slice(matchIndex, matchIndex + query.length));
+                const after = escapeHtml(title.slice(matchIndex + query.length));
+                return before + '<strong>' + match + '</strong>' + after;
             }
 
             function hideSuggestions(){
@@ -483,7 +465,9 @@
                     return;
                 }
 
-                results.slice(0, 5).forEach(result => {
+                const query = input.value.trim();
+
+                results.forEach(result => {
                     const li = document.createElement('li');
                     li.className = 'search-suggestion-item';
 
@@ -491,10 +475,9 @@
                     btn.type = 'button';
                     btn.className = 'search-suggestion-btn';
 
-                    const title = result.item && result.item.title ? result.item.title : '';
-                    const link = result.item && result.item.link ? result.item.link : '';
-                    const titleMatch = (result.matches || []).find(match => match.key === 'title');
-                    btn.innerHTML = highlightMatches(title, titleMatch ? titleMatch.indices : []);
+                    const title = result.title || '';
+                    const link = result.link || '';
+                    btn.innerHTML = highlightMatches(title, query);
                     btn.addEventListener('click', function(){
                         if(!link) return;
                         hideSuggestions();
@@ -512,11 +495,6 @@
                 if(!dataApi || !dataApiTitlePath || !dataApiLinkPath){
                     return;
                 }
-                if(typeof window.Fuse !== 'function'){
-                    console.warn('Search suggest: Fuse.js not loaded, suggestions disabled.');
-                    return;
-                }
-
                 const extracted = extractByJsonPath({}, '$');
                 if(extracted === null){
                     console.warn('Search suggest: JSONPath library not loaded, suggestions disabled.');
@@ -546,12 +524,12 @@
                         });
                     }
 
-                    if(!buildFuseFromRecords(records)){
+                    if(!buildSearchIndexFromRecords(records)){
                         throw new Error('No title/link records extracted using configured JSONPath.');
                     }
                 } catch(_e){
                     const fallbackRecords = getFallbackRecordsFromDOM();
-                    if(!buildFuseFromRecords(fallbackRecords)){
+                    if(!buildSearchIndexFromRecords(fallbackRecords)){
                         // Keep the basic search UI available even if suggestions fail.
                         console.warn('Search suggest: failed to fetch or index titles.');
                     }
