@@ -163,21 +163,41 @@
         border-color: #2563eb;
         box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
-    .search-submit {
-        padding: 0.7rem 1rem;
-        border: 0;
-        border-radius: 999px;
-        background: #2563eb;
-        color: #fff;
-        font: inherit;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s ease;
+    .search-suggestions {
+        list-style: none;
+        margin: 0.55rem 0 0;
+        padding: 0;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.8rem;
+        overflow: hidden;
+        max-height: 14rem;
+        overflow-y: auto;
+        background: #fff;
     }
-    .search-submit:hover,
-    .search-submit:focus-visible {
-        background: #1d4ed8;
+    .search-suggestions[hidden] {
+        display: none;
+    }
+    .search-suggestion-item + .search-suggestion-item {
+        border-top: 1px solid #f1f5f9;
+    }
+    .search-suggestion-btn {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        text-align: left;
+        padding: 0.65rem 0.8rem;
+        cursor: pointer;
+        color: #1f2937;
+        font: inherit;
+    }
+    .search-suggestion-btn:hover,
+    .search-suggestion-btn:focus-visible {
+        background: #f8fafc;
         outline: none;
+    }
+    .search-suggestion-btn strong {
+        color: #0f172a;
+        font-weight: 700;
     }
     .sr-only {
         position: absolute;
@@ -205,9 +225,6 @@
             flex-direction: column;
             align-items: stretch;
         }
-        .search-submit {
-            width: 100%;
-        }
     }
     </style>
 
@@ -228,20 +245,26 @@
                     </a>
                 </div>
 
+                {{- $searchDataAPI := .Site.Params.data_api -}}
+                {{- $searchDataTitle := .Site.Params.data_api_title -}}
+                {{- $searchDataLink := .Site.Params.data_api_link -}}
+                {{- if and $searchDataAPI $searchDataTitle $searchDataLink -}}
                 <div class="search-icon">
+                    <div class="search-data" data-api="{{ $searchDataAPI }}" data-api-title="{{ $searchDataTitle }}" data-api-link="{{ $searchDataLink }}" hidden></div>
                     <button type="button" class="search-toggle" aria-expanded="false" aria-controls="site-search-panel" aria-label="Open search">
                         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                             <path d="M10.5 4a6.5 6.5 0 1 0 4.18 11.49l4.41 4.4 1.41-1.41-4.4-4.41A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z" />
                         </svg>
                     </button>
                     <div id="site-search-panel" class="search-panel" hidden>
-                        <form class="search-form" role="search" action="{{ "search/" | relURL }}" method="get">
+                        <form class="search-form" role="search" onsubmit="return false;">
                             <label class="sr-only" for="site-search-query">Search the site</label>
                             <input id="site-search-query" class="search-input" type="search" name="q" placeholder="Search the site" autocomplete="off">
-                            <button type="submit" class="search-submit">Search</button>
                         </form>
+                        <ul id="site-search-suggestions" class="search-suggestions" hidden></ul>
                     </div>
                 </div>
+                {{- end -}}
 
                 <nav class="nav-menu">
                     <!-- 
@@ -318,6 +341,10 @@
     <!-- JavaScript -->
     <script src="{{ "js/main.js" | absURL }}"></script>
     <script src="{{ "js/base.js" | absURL }}"></script>
+    {{- if and .Site.Params.data_api .Site.Params.data_api_title .Site.Params.data_api_link -}}
+    <script src="{{ "js/vendor/fuse.basic.min.js" | absURL }}"></script>
+    <script src="{{ "js/vendor/jsonpath.min.js" | absURL }}"></script>
+    {{- end -}}
 
         <script>
         // Header search toggle: open on click, close on outside click or Escape.
@@ -328,7 +355,208 @@
             const toggle = searchIcon.querySelector('.search-toggle');
             const panel = searchIcon.querySelector('.search-panel');
             const input = searchIcon.querySelector('.search-input');
-            if(!toggle || !panel || !input) return;
+            const form = searchIcon.querySelector('.search-form');
+            const suggestions = searchIcon.querySelector('.search-suggestions');
+            const searchData = searchIcon.querySelector('.search-data');
+            if(!toggle || !panel || !input || !form || !suggestions || !searchData) return;
+
+            const dataApi = searchData.dataset.api;
+            const dataApiTitlePath = searchData.dataset.apiTitle;
+            const dataApiLinkPath = searchData.dataset.apiLink;
+            let fuse = null;
+
+            function escapeHtml(value){
+                return value
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function extractByJsonPath(payload, path){
+                if(window.jsonpath && typeof window.jsonpath.query === 'function'){
+                    return window.jsonpath.query(payload, path);
+                }
+
+                // Compatibility fallback if another JSONPath implementation is loaded.
+                if(window.JSONPath && typeof window.JSONPath.JSONPath === 'function'){
+                    return window.JSONPath.JSONPath({ path: path, json: payload, wrap: true });
+                }
+                if(typeof window.JSONPath === 'function'){
+                    return window.JSONPath({ path: path, json: payload, wrap: true });
+                }
+
+                return null;
+            }
+
+            function refreshSuggestionsFromInput(){
+                const query = input.value.trim();
+                if(query.length < 3 || !fuse){
+                    hideSuggestions();
+                    return;
+                }
+
+                const results = fuse.search(query, { limit: 5 });
+                renderSuggestions(results);
+            }
+
+            function buildFuseFromRecords(rawRecords){
+                const seen = new Set();
+                const records = (Array.isArray(rawRecords) ? rawRecords : [])
+                    .filter(item => item && typeof item.title === 'string' && typeof item.link === 'string')
+                    .map(item => ({
+                        title: item.title.trim(),
+                        link: item.link.trim()
+                    }))
+                    .filter(item => item.title && item.link)
+                    .filter(item => {
+                        const key = item.link.toLowerCase();
+                        if(seen.has(key)) return false;
+                        seen.add(key);
+                        return true;
+                    });
+
+                if(records.length === 0){
+                    return false;
+                }
+
+                fuse = new window.Fuse(records, {
+                    keys: ['title'],
+                    threshold: 0.35,
+                    ignoreLocation: true,
+                    includeMatches: true,
+                    minMatchCharLength: 1
+                });
+
+                refreshSuggestionsFromInput();
+                return true;
+            }
+
+            function getFallbackRecordsFromDOM(){
+                return Array.from(document.querySelectorAll('.story-card[data-title]'))
+                    .map(card => {
+                        const anchor = card.querySelector('h3 a');
+                        return {
+                            title: anchor ? (anchor.textContent || '') : (card.dataset.title || ''),
+                            link: anchor && anchor.getAttribute('href') ? anchor.getAttribute('href') : ''
+                        };
+                    });
+            }
+
+            function highlightMatches(title, indices){
+                if(!indices || indices.length === 0) return escapeHtml(title);
+
+                const sorted = indices
+                    .map(pair => [Math.max(0, pair[0]), Math.min(title.length - 1, pair[1])])
+                    .sort((a, b) => a[0] - b[0]);
+
+                const merged = [];
+                sorted.forEach(pair => {
+                    if(merged.length === 0 || pair[0] > merged[merged.length - 1][1] + 1){
+                        merged.push([pair[0], pair[1]]);
+                    } else {
+                        merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], pair[1]);
+                    }
+                });
+
+                let cursor = 0;
+                let output = '';
+                merged.forEach(pair => {
+                    output += escapeHtml(title.slice(cursor, pair[0]));
+                    output += '<strong>' + escapeHtml(title.slice(pair[0], pair[1] + 1)) + '</strong>';
+                    cursor = pair[1] + 1;
+                });
+                output += escapeHtml(title.slice(cursor));
+                return output;
+            }
+
+            function hideSuggestions(){
+                suggestions.hidden = true;
+                suggestions.innerHTML = '';
+            }
+
+            function renderSuggestions(results){
+                suggestions.innerHTML = '';
+                if(!results || results.length === 0){
+                    hideSuggestions();
+                    return;
+                }
+
+                results.slice(0, 5).forEach(result => {
+                    const li = document.createElement('li');
+                    li.className = 'search-suggestion-item';
+
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'search-suggestion-btn';
+
+                    const title = result.item && result.item.title ? result.item.title : '';
+                    const link = result.item && result.item.link ? result.item.link : '';
+                    const titleMatch = (result.matches || []).find(match => match.key === 'title');
+                    btn.innerHTML = highlightMatches(title, titleMatch ? titleMatch.indices : []);
+                    btn.addEventListener('click', function(){
+                        if(!link) return;
+                        hideSuggestions();
+                        window.location.href = link;
+                    });
+
+                    li.appendChild(btn);
+                    suggestions.appendChild(li);
+                });
+
+                suggestions.hidden = false;
+            }
+
+            async function initSuggestions(){
+                if(!dataApi || !dataApiTitlePath || !dataApiLinkPath){
+                    return;
+                }
+                if(typeof window.Fuse !== 'function'){
+                    console.warn('Search suggest: Fuse.js not loaded, suggestions disabled.');
+                    return;
+                }
+
+                const extracted = extractByJsonPath({}, '$');
+                if(extracted === null){
+                    console.warn('Search suggest: JSONPath library not loaded, suggestions disabled.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(dataApi, { credentials: 'omit' });
+                    if(!response.ok){
+                        throw new Error('Non-200 response from data API.');
+                    }
+
+                    const payload = await response.json();
+                    const extractedTitles = extractByJsonPath(payload, dataApiTitlePath);
+                    const extractedLinks = extractByJsonPath(payload, dataApiLinkPath);
+
+                    const records = [];
+                    const maxLen = Math.max(
+                        Array.isArray(extractedTitles) ? extractedTitles.length : 0,
+                        Array.isArray(extractedLinks) ? extractedLinks.length : 0
+                    );
+
+                    for(let i = 0; i < maxLen; i++){
+                        records.push({
+                            title: Array.isArray(extractedTitles) ? extractedTitles[i] : '',
+                            link: Array.isArray(extractedLinks) ? extractedLinks[i] : ''
+                        });
+                    }
+
+                    if(!buildFuseFromRecords(records)){
+                        throw new Error('No title/link records extracted using configured JSONPath.');
+                    }
+                } catch(_e){
+                    const fallbackRecords = getFallbackRecordsFromDOM();
+                    if(!buildFuseFromRecords(fallbackRecords)){
+                        // Keep the basic search UI available even if suggestions fail.
+                        console.warn('Search suggest: failed to fetch or index titles.');
+                    }
+                }
+            }
 
             function openSearch(){
                 panel.hidden = false;
@@ -341,6 +569,7 @@
                 panel.hidden = true;
                 toggle.setAttribute('aria-expanded', 'false');
                 searchIcon.classList.remove('open');
+                hideSuggestions();
             }
 
             toggle.addEventListener('click', function(e){
@@ -363,6 +592,22 @@
                     closeSearch();
                 }
             });
+
+            input.addEventListener('input', function(){
+                refreshSuggestionsFromInput();
+            });
+
+            input.addEventListener('keydown', function(e){
+                if(e.key === 'Enter'){
+                    hideSuggestions();
+                }
+            });
+
+            panel.addEventListener('click', function(e){
+                e.stopPropagation();
+            });
+
+            initSuggestions();
         });
 
         // Refresh nav menu: dynamic random menu items with caching and auto-refresh
