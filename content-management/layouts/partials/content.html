@@ -64,12 +64,39 @@
                 {{ end }}
             </div>
 
+            <!-- Collections -->
+            {{ with $page.Params.collections }}
+            <div class="{{ $sing }}-collections">
+                Part of collections:
+                {{ range . }}
+                    {{- $colID := . -}}
+                    {{- $colSlug := $colID | urlize -}}
+                    {{- $colPath := printf "/collections/%s" $colSlug -}}
+                    {{- $colPage := $.Site.GetPage $colPath -}}
+                    {{- $trim := "" -}}
+                    {{- if not $colPage -}}
+                        {{- $trim = replaceRE "^/" "" $colPath -}}
+                        {{- $colPage = site.GetPage $trim -}}
+                    {{- end -}}
+                    {{- if not $colPage -}}
+                        {{- $indexPath := printf "%s/index" (replaceRE "/$" "" $trim) -}}
+                        {{- $colPage = site.GetPage $indexPath -}}
+                    {{- end -}}
+                    {{- if $colPage -}}
+                        <a class="collections-tag" href="{{ $colPage.RelPermalink }}" target="_blank" rel="noopener noreferrer">{{ $colPage.Title }} <span class="open-in-new" aria-hidden="true">↗</span></a>
+                    {{- else -}}
+                        <a class="collections-tag" href="/collections/{{ $colSlug }}/" target="_blank" rel="noopener noreferrer">{{ $colID }} <span class="open-in-new" aria-hidden="true">↗</span></a>
+                    {{- end }}
+                {{ end }}
+            </div>
+            {{ end }}
+
             <!-- Social Sharing -->
             {{ partial "social-sharing-single.html" $page }}
         </div>
     </header>
 
-            <div class="{{ $sing }}-content">
+    <div class="{{ $sing }}-content">
         <div class="container">
             <div class="{{ $sing }}-text">
                 {{ partial "illustration.html" . }}
@@ -262,6 +289,8 @@
     padding: 2rem 0;
     margin-top: 2rem;
 }
+
+.collections-tag .open-in-new{margin-left:0.25rem;font-size:0.9em;opacity:0.8}
 
   </style>
 </article>

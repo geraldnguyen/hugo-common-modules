@@ -64,10 +64,13 @@
 
   <ul class="taxonomy-list">
     {{ range .Paginator.Pages }}
+      {{ $cardType := .Section }}
+      {{ $cardTypeSingular := $cardType | lower | singularize }}
+      {{ $cardTypePlural := $cardType | lower | pluralize }}
+      {{ $cardPartial := print $cardTypeSingular "-card" ".html" }}
+
       <li class="taxonomy-item">
-        <a href="{{ .RelPermalink }}" class="taxonomy-link">{{ .Title }}</a>
-        <span class="taxonomy-meta">{{ .Date.Format "Jan 2, 2006" }}</span>
-        <div class="summary taxonomy-summary">{{ .Summary }}</div>
+        {{ partial $cardPartial . }}
       </li>
     {{ end }}
   </ul>
