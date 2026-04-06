@@ -92,6 +92,119 @@
         .refresh-nav-menu { display:block; margin:0.5rem 0 0; }
         .refresh-nav-menu .refresh-controls { margin-bottom:0.5rem; }
     }
+
+    /* Header search UI */
+    .search-icon {
+        display: flex;
+        align-items: center;
+        margin-left: 1rem;
+    }
+    .search-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 999px;
+        background: #fff;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .search-toggle:hover,
+    .search-toggle:focus-visible {
+        color: #2563eb;
+        border-color: rgba(37, 99, 235, 0.3);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        outline: none;
+    }
+    .search-toggle svg {
+        width: 1rem;
+        height: 1rem;
+        fill: currentColor;
+    }
+    .search-panel {
+        position: absolute;
+        top: calc(100% + 0.6rem);
+        right: 0;
+        z-index: 1002;
+        width: min(24rem, calc(100vw - 2rem));
+        padding: 0.85rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        background: #fff;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+    }
+    .search-panel[hidden] {
+        display: none;
+    }
+    .search-form {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    .search-input {
+        flex: 1;
+        min-width: 0;
+        padding: 0.7rem 0.9rem;
+        border: 1px solid #d1d5db;
+        border-radius: 999px;
+        background: #fff;
+        color: #111827;
+        font: inherit;
+    }
+    .search-input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .search-submit {
+        padding: 0.7rem 1rem;
+        border: 0;
+        border-radius: 999px;
+        background: #2563eb;
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+    .search-submit:hover,
+    .search-submit:focus-visible {
+        background: #1d4ed8;
+        outline: none;
+    }
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+    @media (max-width:768px) {
+        .search-icon {
+            margin: 0.75rem 0 0;
+            width: 100%;
+            justify-content: flex-start;
+        }
+        .search-panel {
+            left: 0;
+            right: auto;
+            width: calc(100vw - 2rem);
+        }
+        .search-form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .search-submit {
+            width: 100%;
+        }
+    }
     </style>
 
     {{ partial "html_head.html" . }}
@@ -109,6 +222,21 @@
                     <a href="{{ .Site.BaseURL }}" class="nav-brand">
                         <h1>{{ .Site.Title }}</h1>
                     </a>
+                </div>
+
+                <div class="search-icon">
+                    <button type="button" class="search-toggle" aria-expanded="false" aria-controls="site-search-panel" aria-label="Open search">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M10.5 4a6.5 6.5 0 1 0 4.18 11.49l4.41 4.4 1.41-1.41-4.4-4.41A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z" />
+                        </svg>
+                    </button>
+                    <div id="site-search-panel" class="search-panel" hidden>
+                        <form class="search-form" role="search" action="{{ "search/" | relURL }}" method="get">
+                            <label class="sr-only" for="site-search-query">Search the site</label>
+                            <input id="site-search-query" class="search-input" type="search" name="q" placeholder="Search the site" autocomplete="off">
+                            <button type="submit" class="search-submit">Search</button>
+                        </form>
+                    </div>
                 </div>
 
                 <nav class="nav-menu">
@@ -188,6 +316,51 @@
     <script src="{{ "js/base.js" | absURL }}"></script>
 
         <script>
+        // Header search toggle: open on click, close on outside click or Escape.
+        document.addEventListener('DOMContentLoaded', function(){
+            const searchIcon = document.querySelector('.search-icon');
+            if(!searchIcon) return;
+
+            const toggle = searchIcon.querySelector('.search-toggle');
+            const panel = searchIcon.querySelector('.search-panel');
+            const input = searchIcon.querySelector('.search-input');
+            if(!toggle || !panel || !input) return;
+
+            function openSearch(){
+                panel.hidden = false;
+                toggle.setAttribute('aria-expanded', 'true');
+                searchIcon.classList.add('open');
+                window.requestAnimationFrame(() => input.focus());
+            }
+
+            function closeSearch(){
+                panel.hidden = true;
+                toggle.setAttribute('aria-expanded', 'false');
+                searchIcon.classList.remove('open');
+            }
+
+            toggle.addEventListener('click', function(e){
+                e.preventDefault();
+                if(panel.hidden){
+                    openSearch();
+                } else {
+                    closeSearch();
+                }
+            });
+
+            document.addEventListener('click', function(e){
+                if(!searchIcon.contains(e.target)){
+                    closeSearch();
+                }
+            });
+
+            document.addEventListener('keydown', function(e){
+                if(e.key === 'Escape'){
+                    closeSearch();
+                }
+            });
+        });
+
         // Refresh nav menu: dynamic random menu items with caching and auto-refresh
         document.addEventListener('DOMContentLoaded', function(){
             const container = document.querySelector('.refresh-nav-menu');
