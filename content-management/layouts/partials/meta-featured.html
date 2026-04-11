@@ -3,98 +3,83 @@
 
   Parameters (passed as a dict):
     Page -> the current page/context (required)
-    Meta -> taxonomy key in front matter (e.g. "genres", "themes") (required)
-    Taxonomy -> either a slice of term names (e.g. (slice "Fable" "Fairy Tale"))
-                or a string of the form "Top X" (e.g. "Top 3").
-    IncludeRemainder -> integer Y (>=0). Picks Y random pages from the remaining
-                        pages that do not belong to the selected taxonomy terms.
+    Meta -> taxonomy key (must exist in Site.Taxonomies) (required)
+    Terms -> slice of taxonomy term names or a single term string (required)
+    Random -> integer Y (>=0). Picks Y random pages from eligible non-featured pages.
 
-  Returns: a slice of pages selected according to the parameters.
+  Returns: featured pages from eligible pages, plus optional random non-featured pages.
 */}}
 {{ $ctx := . }}
 {{ $page := $ctx.Page }}
+{{ if not (isset $ctx "Meta") }}
+  {{ errorf "meta-featured: missing required parameter 'Meta'" }}
+{{ end }}
+{{ if not (isset $ctx "Terms") }}
+  {{ errorf "meta-featured: missing required parameter 'Terms'" }}
+{{ end }}
+
 {{ $metaKey := $ctx.Meta }}
-{{ $taxParam := cond (isset $ctx "Taxonomy") $ctx.Taxonomy (slice) }}
-{{ $include := cond (isset $ctx "IncludeRemainder") $ctx.IncludeRemainder 0 }}
+{{ $termsParam := $ctx.Terms }}
+{{ $random := cond (isset $ctx "Random") $ctx.Random 0 }}
 
-{{ $selected := slice }}
-{{ $selectedTerms := slice }}
+{{/* Meta must point to an existing taxonomy */}}
+{{ $taxonomy := index $page.Site.Taxonomies $metaKey }}
+{{ if not $taxonomy }}
+  {{ errorf "meta-featured: Meta '%s' is not a configured taxonomy" $metaKey }}
+{{ end }}
 
-{{/* Helper: pick one random page from a pages slice */}}
-{{- define "pickOne" -}}
-  {{- $p := . -}}
-  {{- if $p }}
-    {{- $one := (shuffle $p) | first 1 }}
-    {{- if $one }}
-      {{- return $one }}
-    {{- end }}
-  {{- end }}
-  {{- return (slice) }}
-{{- end }}
-
-{{ $taxType := printf "%T" $taxParam }}
-
-{{ if eq $taxType "string" }}
-  {{/* handle "Top X" */}}
-  {{ if hasPrefix $taxParam "Top " }}
-    {{ $nStr := replace $taxParam "Top " "" }}
-    {{ $n := int $nStr }}
-    {{ if gt $n 0 }}
-      {{ $terms := slice }}
-      {{ with index $page.Site.Taxonomies $metaKey }}
-        {{ range $term, $pages := . }}
-          {{ $terms = $terms | append (dict "Term" $term "Pages" $pages "Count" (len $pages)) }}
-        {{ end }}
-      {{ end }}
-      {{ $sorted := sort $terms "Count" "desc" }}
-      {{ $top := first $n $sorted }}
-      {{ range $top }}
-        {{ $termName := index . "Term" }}
-        {{ $pages := index . "Pages" }}
-        {{ $picked := (shuffle $pages) | first 1 }}
-        {{ if $picked }}
-          {{ $selected = $selected | append (index $picked 0) }}
-          {{ $selectedTerms = $selectedTerms | append $termName }}
-        {{ end }}
-      {{ end }}
-    {{ end }}
+{{/* Normalize Terms to a slice */}}
+{{ $terms := slice }}
+{{ if eq (printf "%T" $termsParam) "string" }}
+  {{ if ne $termsParam "" }}
+    {{ $terms = slice $termsParam }}
   {{ end }}
 {{ else }}
-  {{/* treat as slice of term names */}}
-  {{ range $i, $termName := $taxParam }}
-    {{/* find pages where Params.<metaKey> intersects this term */}}
-    {{ $filterKey := print "Params." $metaKey }}
-    {{ $matches := where $page.Site.RegularPages $filterKey "intersect" (slice $termName) }}
-    {{ $picked := (shuffle $matches) | first 1 }}
-    {{ if gt (len $picked) 0 }}
-      {{ $selected = $selected | append (index $picked 0) }}
-      {{ $selectedTerms = $selectedTerms | append $termName }}
-    {{ end }}
+  {{ $terms = $termsParam }}
+{{ end }}
+
+{{ if eq (len $terms) 0 }}
+  {{ errorf "meta-featured: Terms must be a non-empty string or slice" }}
+{{ end }}
+
+{{/* Keep only terms that exist in the selected taxonomy */}}
+{{ $validTerms := slice }}
+{{ range $term := $terms }}
+  {{ if index $taxonomy $term }}
+    {{ $validTerms = $validTerms | append $term }}
   {{ end }}
 {{ end }}
 
-{{/* Include remainder: pick $include random pages from stories that do NOT have any of the selected terms */}}
-{{ if gt $include 0 }}
-  {{ $allStories := where $page.Site.RegularPages "Section" "stories" }}
-  {{ $otherStories := slice }}
-  {{ range $allStories }}
-    {{ $hasTarget := false }}
-    {{ with index .Params $metaKey }}
-      {{ range . }}
-        {{ if in $selectedTerms . }}
-          {{ $hasTarget = true }}
-        {{ end }}
-      {{ end }}
-    {{ end }}
-    {{ if not $hasTarget }}
-      {{ $otherStories = $otherStories | append . }}
+{{ if eq (len $validTerms) 0 }}
+  {{ return (slice) }}
+{{ end }}
+
+{{/* Eligible pages: pages that have at least one of the requested terms under Meta */}}
+{{ $filterKey := print "Params." $metaKey }}
+{{ $eligible := where $page.Site.RegularPages $filterKey "intersect" $validTerms }}
+
+{{/* Select featured pages from eligible set */}}
+{{ $featured := where $eligible "Params.featured" true }}
+{{ $selected := $featured }}
+
+{{/* Optional random additions from eligible pages, excluding already-selected featured pages */}}
+{{ if gt $random 0 }}
+  {{ $featuredPaths := slice }}
+  {{ range $featured }}
+    {{ $featuredPaths = $featuredPaths | append .Path }}
+  {{ end }}
+
+  {{ $remainder := slice }}
+  {{ range $eligible }}
+    {{ if not (in $featuredPaths .Path) }}
+      {{ $remainder = $remainder | append . }}
     {{ end }}
   {{ end }}
-  {{ $more := (shuffle $otherStories) | first $include }}
+
+  {{ $more := (shuffle $remainder) | first $random }}
   {{ range $more }}
     {{ $selected = $selected | append . }}
   {{ end }}
 {{ end }}
 
-{{/* Return the selected pages slice */}}
 {{ return $selected }}
