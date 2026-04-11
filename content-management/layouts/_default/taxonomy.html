@@ -55,7 +55,15 @@
 
   {{ .Content }}
   
+  <!-- Get featured picks for specific genres using meta-featured partial -->
+  {{ $terms := slice (lower .Title) }}
+  {{ $featured := partial "meta-featured.html" (dict "Page" . "Meta" .Section "Terms" $terms "Random" 2) }}
+  
+  {{ partial "carousel.html" (dict "Title" "Featured stories" "Card" "story" "CardCssClass" "featured" "Items" $featured) }}
+
+
   <!-- Pagination info -->
+  <h3>All stories</h3>
   {{ if gt .Paginator.TotalPages 1 }}
   <div class="taxonomy-pagination-info">
     Showing {{ .Paginator.PagerSize }} per page of {{ len .Pages }} (Page {{ .Paginator.PageNumber }} of {{ .Paginator.TotalPages }})

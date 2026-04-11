@@ -42,21 +42,20 @@
   {{ errorf "meta-featured: Terms must be a non-empty string or slice" }}
 {{ end }}
 
-{{/* Keep only terms that exist in the selected taxonomy */}}
-{{ $validTerms := slice }}
-{{ range $term := $terms }}
-  {{ if index $taxonomy $term }}
-    {{ $validTerms = $validTerms | append $term }}
+{{/* Extract taxonomy terms whose value type is page.TaxonomyList */}}
+{{ $eligible := slice }}
+{{ range $taxTerm, $taxValue := $taxonomy }}
+  {{ range $term := $terms }}
+    {{ $inputTerm := lower (printf "%v" $term) }}
+    {{ if eq $inputTerm (lower $taxTerm) }}
+      {{ $eligible = $eligible | append $taxValue }}
+    {{ end }}
   {{ end }}
 {{ end }}
 
-{{ if eq (len $validTerms) 0 }}
-  {{ return (slice) }}
-{{ end }}
+{{/* Flatten eligible pages (in case of multiple matching terms) and remove duplicates */}}
+{{ $eligible = $eligible | uniq }}
 
-{{/* Eligible pages: pages that have at least one of the requested terms under Meta */}}
-{{ $filterKey := print "Params." $metaKey }}
-{{ $eligible := where $page.Site.RegularPages $filterKey "intersect" $validTerms }}
 
 {{/* Select featured pages from eligible set */}}
 {{ $featured := where $eligible "Params.featured" true }}
