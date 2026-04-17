@@ -138,14 +138,17 @@
     .search-icon--responsive {
         position: relative;
         width: 100%;
+        margin-left: 0;
+        justify-content: center;
     }
     .search-icon--responsive .search-panel {
         position: static;
         right: auto;
         left: auto;
         top: auto;
-        width: min(100%, 28rem);
+        width: min(calc(100% - 2rem), 28rem);
         max-width: 28rem;
+        margin-inline: auto;
     }
     .search-icon--responsive .search-form {
         flex-direction: row;
