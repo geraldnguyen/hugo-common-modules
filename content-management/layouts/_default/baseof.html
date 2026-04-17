@@ -111,7 +111,7 @@
                     </a>
                 </div>
 
-                {{ partial "search.html" . }}
+                {{ partial "search.html" (dict "Page" . "placement" "fixed-top") }}
 
                 <nav class="nav-menu">
                     <!-- 

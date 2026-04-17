@@ -1,7 +1,9 @@
-{{- if and .Site.Params.data_api .Site.Params.data_api_title .Site.Params.data_api_link -}}
-{{- $searchDataAPI := .Site.Params.data_api -}}
-{{- $searchDataTitle := .Site.Params.data_api_title -}}
-{{- $searchDataLink := .Site.Params.data_api_link -}}
+{{- $page := .Page | default . -}}
+{{- $placement := .placement | default "fixed-top" -}}
+{{- if and $page.Site.Params.data_api $page.Site.Params.data_api_title $page.Site.Params.data_api_link -}}
+{{- $searchDataAPI := $page.Site.Params.data_api -}}
+{{- $searchDataTitle := $page.Site.Params.data_api_title -}}
+{{- $searchDataLink := $page.Site.Params.data_api_link -}}
 
 <style>
 /* Header search UI */
@@ -22,10 +24,6 @@
     color: #374151;
     cursor: pointer;
     transition: all 0.2s ease;
-    position:fixed;
-    top: 1rem;
-    right: 1rem;
-    z-index: 1001;
 }
 .search-toggle:hover,
 .search-toggle:focus-visible {
@@ -38,6 +36,25 @@
     width: 1rem;
     height: 1rem;
     fill: currentColor;
+}
+
+/* fixed-top: button is fixed in the viewport top-right corner */
+.search-icon--fixed-top .search-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1001;
+}
+
+/* responsive: button sits in the normal element flow */
+.search-icon--responsive {
+    position: relative;
+}
+.search-icon--responsive .search-panel {
+    right: auto;
+    left: 0;
+    width: 100%;
+    max-width: 28rem;
 }
 .search-panel {
     position: absolute;
@@ -139,7 +156,7 @@
 }
 </style>
 
-<div class="search-icon">
+<div class="search-icon search-icon--{{ $placement }}">
     <div class="search-data" data-api="{{ $searchDataAPI }}" data-api-title="{{ $searchDataTitle }}" data-api-link="{{ $searchDataLink }}" hidden></div>
     <button type="button" class="search-toggle" aria-expanded="false" aria-controls="site-search-panel" aria-label="Open search">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
