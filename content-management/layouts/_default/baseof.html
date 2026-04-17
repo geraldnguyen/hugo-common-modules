@@ -137,12 +137,23 @@
     /* responsive: button sits in the normal element flow */
     .search-icon--responsive {
         position: relative;
+        width: 100%;
     }
     .search-icon--responsive .search-panel {
+        position: static;
         right: auto;
-        left: 0;
-        width: 100%;
+        left: auto;
+        top: auto;
+        width: min(100%, 28rem);
         max-width: 28rem;
+    }
+    .search-icon--responsive .search-form {
+        flex-direction: row;
+        align-items: stretch;
+        width: 100%;
+    }
+    .search-icon--responsive .search-toggle {
+        display: none;
     }
     .search-panel {
         position: absolute;
@@ -163,6 +174,7 @@
         display: flex;
         gap: 0.5rem;
         align-items: center;
+        width: 100%;
     }
     .search-input {
         flex: 1;
@@ -178,6 +190,33 @@
         outline: none;
         border-color: #2563eb;
         box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .search-submit {
+        flex: 0 0 2.5rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #d1d5db;
+        border-radius: 999px;
+        background: #fff;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .search-submit:hover,
+    .search-submit:focus-visible {
+        color: #2563eb;
+        border-color: rgba(37, 99, 235, 0.3);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        outline: none;
+    }
+    .search-submit svg {
+        width: 1rem;
+        height: 1rem;
+        fill: currentColor;
     }
     .search-suggestions {
         list-style: none;
@@ -231,15 +270,6 @@
             margin: 0.75rem 0 0;
             width: 100%;
             justify-content: flex-start;
-        }
-        .search-panel {
-            left: 0;
-            right: auto;
-            width: calc(100vw - 2rem);
-        }
-        .search-form {
-            flex-direction: column;
-            align-items: stretch;
         }
     }
     </style>
@@ -615,12 +645,15 @@
         }
 
         function initWidget(searchIcon){
+            const isResponsive = searchIcon.classList.contains('search-icon--responsive');
             const toggle = searchIcon.querySelector('.search-toggle');
             const panel = searchIcon.querySelector('.search-panel');
+            const form = searchIcon.querySelector('.search-form');
             const input = searchIcon.querySelector('.search-input');
             const suggestions = searchIcon.querySelector('.search-suggestions');
             const searchData = searchIcon.querySelector('.search-data');
-            if(!toggle || !panel || !input || !suggestions || !searchData) return;
+            if(!panel || !form || !input || !suggestions || !searchData) return;
+            if(!isResponsive && !toggle) return;
 
             const dataApi = searchData.dataset.api;
             const dataApiTitlePath = searchData.dataset.apiTitle;
@@ -728,18 +761,26 @@
             }
 
             function closeSearch(){
+                if(isResponsive) return;
                 panel.hidden = true;
                 toggle.setAttribute('aria-expanded', 'false');
                 searchIcon.classList.remove('open');
                 hideSuggestions();
             }
 
-            toggle.addEventListener('click', function(e){
+            if(!isResponsive){
+                toggle.addEventListener('click', function(e){
+                    e.preventDefault();
+                    e.stopPropagation();
+                    panel.hidden ? openSearch() : closeSearch();
+                });
+                panel.addEventListener('click', function(e){ e.stopPropagation(); });
+            }
+
+            form.addEventListener('submit', function(e){
                 e.preventDefault();
-                e.stopPropagation();
-                panel.hidden ? openSearch() : closeSearch();
+                refreshSuggestionsFromInput();
             });
-            panel.addEventListener('click', function(e){ e.stopPropagation(); });
             input.addEventListener('input', refreshSuggestionsFromInput);
             input.addEventListener('keydown', function(e){ if(e.key === 'Enter') hideSuggestions(); });
             initSuggestions();
@@ -749,6 +790,10 @@
             const panel = icon.querySelector('.search-panel');
             const toggle = icon.querySelector('.search-toggle');
             const suggestions = icon.querySelector('.search-suggestions');
+            if(icon.classList.contains('search-icon--responsive')){
+                if(suggestions){ suggestions.hidden = true; suggestions.innerHTML = ''; }
+                return;
+            }
             if(panel) panel.hidden = true;
             if(toggle) toggle.setAttribute('aria-expanded', 'false');
             icon.classList.remove('open');
